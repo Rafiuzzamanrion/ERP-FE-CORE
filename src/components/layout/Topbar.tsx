@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Sun, Moon, LogOut, ChevronRight, Bell } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/app/hooks";
@@ -38,30 +39,34 @@ function getBreadcrumbs(pathname: string) {
   return [{ label: pathname.replace("/", "") || "Dashboard" }];
 }
 
-export function Topbar() {
+export const Topbar = memo(function Topbar() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const user = useAppSelector((state) => state.auth.user);
   const theme = useAppSelector((state) => state.ui.theme);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     dispatch(logout());
     navigate("/login");
-  };
+  }, [dispatch, navigate]);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     dispatch(setTheme(theme === "light" ? "dark" : "light"));
-  };
+  }, [dispatch, theme]);
 
-  const initials = user?.name
-    ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "U";
+  const initials = useMemo(
+    () =>
+      user?.name
+        ? user.name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2)
+        : "U",
+    [user?.name]
+  );
 
   const breadcrumbs = getBreadcrumbs(location.pathname);
 
@@ -175,4 +180,4 @@ export function Topbar() {
       </div>
     </header>
   );
-}
+});

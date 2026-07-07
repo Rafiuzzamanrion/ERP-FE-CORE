@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ interface RecentSalesProps {
   sales: RecentSale[];
 }
 
-export default function RecentSales({ sales }: RecentSalesProps) {
+export default memo(function RecentSales({ sales }: RecentSalesProps) {
   return (
     <Card className="border-none shadow-sm h-full">
       <CardHeader className="pb-3">
@@ -51,4 +52,4 @@ export default function RecentSales({ sales }: RecentSalesProps) {
       </CardContent>
     </Card>
   );
-}
+});

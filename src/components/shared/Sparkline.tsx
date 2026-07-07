@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 interface SparklineProps {
   data: number[];
   color?: string;
@@ -13,6 +15,8 @@ export function Sparkline({
   strokeWidth = 2,
   height = 40,
 }: SparklineProps) {
+  const gradientId = useId();
+
   if (!data.length) return null;
 
   const width = 100;
@@ -35,8 +39,6 @@ export function Sparkline({
     .join(" ");
 
   const areaPath = `${linePath} L ${width - padding} ${height} L ${padding} ${height} Z`;
-
-  const gradientId = `sparkline-gradient-${Math.random().toString(36).slice(2, 9)}`;
 
   return (
     <svg

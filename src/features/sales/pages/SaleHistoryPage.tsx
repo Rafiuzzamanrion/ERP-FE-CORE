@@ -48,17 +48,7 @@ export default function SaleHistoryPage() {
     search: debouncedSearch || undefined,
   });
 
-  const filteredSales = (data?.data ?? []).filter((sale) => {
-    if (!debouncedSearch) return true;
-    const term = debouncedSearch.toLowerCase();
-    return (
-      sale.items.some((item) =>
-        item.productName.toLowerCase().includes(term)
-      ) ||
-      (typeof sale.soldBy === "object" &&
-        sale.soldBy?.name.toLowerCase().includes(term))
-    );
-  });
+  const sales = data?.data ?? [];
 
   return (
     <div className="space-y-6">
@@ -90,7 +80,7 @@ export default function SaleHistoryPage() {
 
       {isLoading ? (
         <SaleHistorySkeleton />
-      ) : filteredSales.length === 0 ? (
+      ) : sales.length === 0 ? (
         <NoDataFound
           title={
             debouncedSearch ? "No sales match your search" : "No sales yet"
@@ -123,7 +113,7 @@ export default function SaleHistoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSales.map((sale) => (
+                {sales.map((sale) => (
                   <TableRow key={sale._id}>
                     <TableCell>
                       {new Date(sale.createdAt).toLocaleDateString()}

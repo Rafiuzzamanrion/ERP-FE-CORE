@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState, useCallback } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -31,78 +31,81 @@ interface NavItem {
   roles?: string[];
 }
 
-export function Sidebar() {
+const navSections: { title: string; items: NavItem[] }[] = [
+  {
+    title: "Overview",
+    items: [
+      {
+        to: "/",
+        label: "Dashboard",
+        icon: <LayoutDashboard className="h-5 w-5" />,
+      },
+    ],
+  },
+  {
+    title: "Inventory",
+    items: [
+      {
+        to: "/products",
+        label: "Products",
+        icon: <Package className="h-5 w-5" />,
+      },
+      {
+        to: "/categories",
+        label: "Categories",
+        icon: <Tag className="h-5 w-5" />,
+        roles: ["admin", "manager"],
+      },
+    ],
+  },
+  {
+    title: "Sales",
+    items: [
+      {
+        to: "/sales/new",
+        label: "New Sale",
+        icon: <ShoppingCart className="h-5 w-5" />,
+      },
+      {
+        to: "/sales",
+        label: "Sale History",
+        icon: <Receipt className="h-5 w-5" />,
+      },
+    ],
+  },
+  {
+    title: "Admin",
+    items: [
+      {
+        to: "/users",
+        label: "Users",
+        icon: <Users className="h-5 w-5" />,
+        roles: ["admin"],
+      },
+      {
+        to: "/roles",
+        label: "Roles",
+        icon: <Shield className="h-5 w-5" />,
+        roles: ["admin"],
+      },
+    ],
+  },
+];
+
+export const Sidebar = memo(function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const dispatch = useAppDispatch();
   const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
   const user = useAppSelector((state) => state.auth.user);
   const location = useLocation();
 
-  const navSections: { title: string; items: NavItem[] }[] = [
-    {
-      title: "Overview",
-      items: [
-        {
-          to: "/",
-          label: "Dashboard",
-          icon: <LayoutDashboard className="h-5 w-5" />,
-        },
-      ],
+  const isItemVisible = useCallback(
+    (item: NavItem) => {
+      if (!item.roles) return true;
+      return user ? item.roles.includes(user.role) : false;
     },
-    {
-      title: "Inventory",
-      items: [
-        {
-          to: "/products",
-          label: "Products",
-          icon: <Package className="h-5 w-5" />,
-        },
-        {
-          to: "/categories",
-          label: "Categories",
-          icon: <Tag className="h-5 w-5" />,
-          roles: ["admin", "manager"],
-        },
-      ],
-    },
-    {
-      title: "Sales",
-      items: [
-        {
-          to: "/sales/new",
-          label: "New Sale",
-          icon: <ShoppingCart className="h-5 w-5" />,
-        },
-        {
-          to: "/sales",
-          label: "Sale History",
-          icon: <Receipt className="h-5 w-5" />,
-        },
-      ],
-    },
-    {
-      title: "Admin",
-      items: [
-        {
-          to: "/users",
-          label: "Users",
-          icon: <Users className="h-5 w-5" />,
-          roles: ["admin"],
-        },
-        {
-          to: "/roles",
-          label: "Roles",
-          icon: <Shield className="h-5 w-5" />,
-          roles: ["admin"],
-        },
-      ],
-    },
-  ];
-
-  function isItemVisible(item: NavItem) {
-    if (!item.roles) return true;
-    return user ? item.roles.includes(user.role) : false;
-  }
+    [user]
+  );
 
   const NavLinkContent = ({
     item,
@@ -160,6 +163,15 @@ export function Sidebar() {
           const visibleItems = section.items.filter(isItemVisible);
           if (visibleItems.length === 0) return null;
 
+          const matchingItems = visibleItems.filter(
+            (item) =>
+              location.pathname === item.to ||
+              (item.to !== "/" && location.pathname.startsWith(`${item.to}/`))
+          );
+          const activeItem = matchingItems.sort(
+            (a, b) => b.to.length - a.to.length
+          )[0];
+
           return (
             <div key={section.title} className="mb-6">
               {!sidebarCollapsed && (
@@ -169,9 +181,7 @@ export function Sidebar() {
               )}
               <ul className="space-y-1">
                 {visibleItems.map((item) => {
-                  const isActive =
-                    location.pathname === item.to ||
-                    (item.to !== "/" && location.pathname.startsWith(item.to));
+                  const isActive = activeItem?.to === item.to;
                   return (
                     <li key={item.to}>
                       {sidebarCollapsed ? (
@@ -254,4 +264,4 @@ export function Sidebar() {
       </aside>
     </>
   );
-}
+});

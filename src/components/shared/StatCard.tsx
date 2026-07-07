@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { slideUp } from "@/lib/motion";
@@ -52,7 +52,7 @@ const accentConfig = {
   },
 };
 
-export function StatCard({
+export const StatCard = memo(function StatCard({
   title,
   value,
   icon,
@@ -133,4 +133,4 @@ export function StatCard({
       </Card>
     </motion.div>
   );
-}
+});

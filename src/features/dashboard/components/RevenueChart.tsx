@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
   Chart,
   XAxis,
@@ -23,7 +23,7 @@ interface RevenueChartProps {
   data: DailyRevenue[];
 }
 
-export default function RevenueChart({ data }: RevenueChartProps) {
+export default memo(function RevenueChart({ data }: RevenueChartProps) {
   const categories = useMemo(
     () =>
       data.map((d) =>
@@ -170,4 +170,4 @@ export default function RevenueChart({ data }: RevenueChartProps) {
       </CardContent>
     </Card>
   );
-}
+});

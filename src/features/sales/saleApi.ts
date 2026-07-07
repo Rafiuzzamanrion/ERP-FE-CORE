@@ -29,6 +29,7 @@ export const saleApi = apiSlice.injectEndpoints({
       string
     >({
       query: (id) => `/sales/${id}`,
+      providesTags: (_result, _error, id) => [{ type: "Sale", id }],
     }),
   }),
 });
