@@ -15,7 +15,7 @@ interface RevenueChartProps {
 }
 
 export default function RevenueChart({ data }: RevenueChartProps) {
-  const options = useMemo(() => {
+  const options = useMemo<Highcharts.Options>(() => {
     const categories = data.map((d) =>
       new Date(d.date).toLocaleDateString("en-US", { weekday: "short" })
     );
@@ -43,7 +43,9 @@ export default function RevenueChart({ data }: RevenueChartProps) {
           gridLineColor: "hsl(var(--border))",
           labels: {
             style: { color: "hsl(var(--muted-foreground))" },
-            formatter: function () {
+            formatter: function (
+              this: Highcharts.AxisLabelsFormatterContextObject
+            ): string {
               return "$" + (this.value as number);
             },
           },
@@ -60,20 +62,6 @@ export default function RevenueChart({ data }: RevenueChartProps) {
         backgroundColor: "hsl(var(--popover))",
         borderColor: "hsl(var(--border))",
         style: { color: "hsl(var(--popover-foreground))" },
-        formatter: function () {
-          const points = (this as any).points as Array<{
-            series: { name: string };
-            y: number;
-          }>;
-          return points.reduce(
-            (acc, point) =>
-              acc +
-              `<br/><span style="color:${point.series.color}">●</span> ${point.series.name}: <b>${
-                point.series.name === "Revenue" ? "$" + point.y : point.y
-              }</b>`,
-            `<b>${(this as any).x}</b>`
-          );
-        },
       },
       legend: {
         itemStyle: { color: "hsl(var(--foreground))" },
@@ -88,6 +76,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
       series: [
         {
           name: "Revenue",
+          type: "areaspline",
           data: revenue,
           color: "hsl(174 72% 35%)",
           fillColor: {
@@ -97,15 +86,15 @@ export default function RevenueChart({ data }: RevenueChartProps) {
               [1, "rgba(13, 148, 136, 0.02)"],
             ],
           },
-        } as Highcharts.SeriesOptionsType,
+        },
         {
           name: "Sales",
-          data: sales,
           type: "spline",
+          data: sales,
           color: "hsl(200 90% 50%)",
           yAxis: 1,
           marker: { radius: 3 },
-        } as Highcharts.SeriesOptionsType,
+        },
       ],
     };
   }, [data]);

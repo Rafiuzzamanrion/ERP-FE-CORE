@@ -93,6 +93,7 @@ export function ImageUploader({
             />
             <button
               type="button"
+              aria-label="Remove image"
               onClick={(e) => {
                 e.stopPropagation();
                 handleRemove();

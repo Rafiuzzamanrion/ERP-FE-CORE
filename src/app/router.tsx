@@ -8,6 +8,9 @@ import AddProductPage from "../features/products/pages/AddProductPage";
 import EditProductPage from "../features/products/pages/EditProductPage";
 import CreateSalePage from "../features/sales/pages/CreateSalePage";
 import SaleHistoryPage from "../features/sales/pages/SaleHistoryPage";
+import UsersListPage from "../features/users/pages/UsersListPage";
+import RolesListPage from "../features/roles/pages/RolesListPage";
+import CategoriesListPage from "../features/categories/pages/CategoriesListPage";
 
 function ProtectedRoute() {
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
@@ -42,10 +45,18 @@ export const router = createBrowserRouter([
             children: [
               { path: "products/new", element: <AddProductPage /> },
               { path: "products/:id/edit", element: <EditProductPage /> },
+              { path: "categories", element: <CategoriesListPage /> },
             ],
           },
           { path: "sales", element: <SaleHistoryPage /> },
           { path: "sales/new", element: <CreateSalePage /> },
+          {
+            element: <RoleRoute roles={["admin"]} />,
+            children: [
+              { path: "users", element: <UsersListPage /> },
+              { path: "roles", element: <RolesListPage /> },
+            ],
+          },
         ],
       },
     ],

@@ -38,7 +38,7 @@ export default function DataTable<T>({
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
-      <div className="rounded-lg border">
+      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -78,7 +78,7 @@ export default function DataTable<T>({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border">
+      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -109,6 +109,7 @@ export default function DataTable<T>({
         <Pagination
           page={meta.page}
           totalPages={meta.totalPages}
+          total={meta.total}
           onPageChange={onPageChange}
         />
       )}

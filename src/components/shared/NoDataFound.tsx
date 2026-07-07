@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { PackageOpen } from "lucide-react";
+import { PackageOpen, SearchX } from "lucide-react";
 import { fadeIn, scaleIn } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface NoDataFoundProps {
   icon?: ReactNode;
@@ -13,6 +14,7 @@ interface NoDataFoundProps {
   ctaLabel?: string;
   ctaTo?: string;
   action?: ReactNode;
+  variant?: "empty" | "search";
 }
 
 export function NoDataFound({
@@ -23,25 +25,34 @@ export function NoDataFound({
   ctaLabel,
   ctaTo,
   action,
+  variant = "empty",
 }: NoDataFoundProps) {
   const displayTitle = title ?? message ?? "No data found";
-  const displayDesc = description ?? "";
+  const defaultIcon =
+    variant === "search" ? (
+      <SearchX className="h-12 w-12 mx-auto" />
+    ) : (
+      <PackageOpen className="h-12 w-12 mx-auto" />
+    );
 
   return (
     <motion.div
       variants={fadeIn}
       initial="hidden"
       animate="visible"
-      className="flex flex-col items-center justify-center py-16 text-center"
+      className={cn(
+        "flex flex-col items-center justify-center py-16 text-center rounded-xl border border-dashed",
+        variant === "search" ? "bg-muted/20" : "bg-card"
+      )}
     >
       <motion.div
         variants={scaleIn}
         initial="hidden"
         animate="visible"
         transition={{ duration: 0.25 }}
-        className="mb-4 text-muted-foreground"
+        className="mb-4 text-muted-foreground/70"
       >
-        {icon ?? <PackageOpen className="h-12 w-12 mx-auto" />}
+        {icon ?? defaultIcon}
       </motion.div>
       <motion.h3
         initial={{ opacity: 0, y: 4 }}
@@ -51,14 +62,14 @@ export function NoDataFound({
       >
         {displayTitle}
       </motion.h3>
-      {displayDesc && (
+      {description && (
         <motion.p
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25, duration: 0.2 }}
           className="mt-1 max-w-sm text-sm text-muted-foreground"
         >
-          {displayDesc}
+          {description}
         </motion.p>
       )}
       {ctaLabel && ctaTo && (

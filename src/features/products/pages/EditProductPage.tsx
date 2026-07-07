@@ -1,31 +1,16 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { useGetProductQuery, useUpdateProductMutation } from "../productApi";
 import ProductForm from "../components/ProductForm";
-
-function ProductFormSkeleton() {
-  return (
-    <div className="space-y-6">
-      <Skeleton className="h-10 w-full" />
-      <div className="grid grid-cols-2 gap-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-32 w-full" />
-      <div className="flex gap-3 justify-end">
-        <Skeleton className="h-9 w-24" />
-        <Skeleton className="h-9 w-32" />
-      </div>
-    </div>
-  );
-}
+import ProductFormSkeleton from "@/components/shared/ProductFormSkeleton";
 
 export default function EditProductPage() {
   const { id } = useParams<{ id: string }>();
@@ -36,7 +21,6 @@ export default function EditProductPage() {
     isLoading,
     isError,
   } = useGetProductQuery(id!, { skip: !id });
-
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
   const product = productResponse?.data;
@@ -57,11 +41,12 @@ export default function EditProductPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">Edit Product</h1>
-        <div className="rounded-xl border bg-card p-6">
-          <ProductFormSkeleton />
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Edit Product</h1>
+          <p className="text-muted-foreground">Update product information</p>
         </div>
+        <ProductFormSkeleton />
       </div>
     );
   }
@@ -73,7 +58,11 @@ export default function EditProductPage() {
         <p className="text-sm text-muted-foreground mt-1">
           The product you are looking for does not exist or has been removed.
         </p>
-        <Button className="mt-4" variant="outline" onClick={() => navigate("/products")}>
+        <Button
+          className="mt-4"
+          variant="outline"
+          onClick={() => navigate("/products")}
+        >
           Back to Products
         </Button>
       </div>
@@ -81,15 +70,24 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Edit Product</h1>
-      <div className="rounded-xl border bg-card p-6">
-        <ProductForm
-          initialData={product}
-          onSubmit={handleSubmit}
-          isLoading={isUpdating}
-        />
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Edit Product</h1>
+        <p className="text-muted-foreground">Update product information</p>
       </div>
+      <Card className="border-none shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle>Product Details</CardTitle>
+          <CardDescription>Make changes to the product below.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          <ProductForm
+            initialData={product}
+            onSubmit={handleSubmit}
+            isLoading={isUpdating}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

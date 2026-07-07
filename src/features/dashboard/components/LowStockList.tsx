@@ -1,18 +1,11 @@
 import { motion } from "framer-motion";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, AlertTriangle, Package } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { staggerContainer, slideUp } from "@/lib/motion";
+import { slideUp } from "@/lib/motion";
 import type { LowStockProduct } from "@/types";
+import { cn } from "@/lib/utils";
 
 interface LowStockListProps {
   products: LowStockProduct[];
@@ -24,16 +17,23 @@ export default function LowStockList({
   isLoading = false,
 }: LowStockListProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Low Stock Products</CardTitle>
+    <Card className="border-none shadow-sm h-full">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">Low Stock Alerts</CardTitle>
+          {products.length > 0 && (
+            <Badge variant="destructive" className="text-xs">
+              {products.length} items
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <div className="space-y-3">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-14 w-full rounded-xl" />
+            <Skeleton className="h-14 w-full rounded-xl" />
+            <Skeleton className="h-14 w-full rounded-xl" />
           </div>
         ) : products.length === 0 ? (
           <motion.div
@@ -42,8 +42,8 @@ export default function LowStockList({
             animate="visible"
             className="flex flex-col items-center justify-center py-12 text-center"
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+              <CheckCircle className="h-8 w-8 text-success" />
             </div>
             <h3 className="mt-4 text-lg font-semibold">
               All stock levels healthy
@@ -53,43 +53,44 @@ export default function LowStockList({
             </p>
           </motion.div>
         ) : (
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Stock Quantity</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <motion.tbody
-                  variants={staggerContainer}
-                  initial="hidden"
-                  animate="visible"
+          <div className="space-y-3">
+            {products.map((product) => (
+              <motion.div
+                key={product._id}
+                variants={slideUp}
+                initial="hidden"
+                animate="visible"
+                className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-shadow"
+              >
+                <div
+                  className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                    product.stockQuantity === 0
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-warning/10 text-warning"
+                  )}
                 >
-                  {products.map((product) => (
-                    <motion.tr
-                      key={product._id}
-                      variants={slideUp}
-                      className="border-b transition-colors hover:bg-muted/50"
-                    >
-                      <TableCell className="font-medium">
-                        {product.name}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {product.sku}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="destructive">
-                          {product.stockQuantity}
-                        </Badge>
-                      </TableCell>
-                    </motion.tr>
-                  ))}
-                </motion.tbody>
-              </TableBody>
-            </Table>
+                  {product.stockQuantity === 0 ? (
+                    <Package className="h-5 w-5" />
+                  ) : (
+                    <AlertTriangle className="h-5 w-5" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{product.name}</p>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {product.sku}
+                  </p>
+                </div>
+                <Badge
+                  variant={
+                    product.stockQuantity === 0 ? "destructive" : "warning"
+                  }
+                >
+                  {product.stockQuantity} left
+                </Badge>
+              </motion.div>
+            ))}
           </div>
         )}
       </CardContent>
