@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, AlertTriangle, Package } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,7 @@ interface LowStockListProps {
   isLoading?: boolean;
 }
 
-export default function LowStockList({
+export default memo(function LowStockList({
   products,
   isLoading = false,
 }: LowStockListProps) {
@@ -96,4 +97,4 @@ export default function LowStockList({
       </CardContent>
     </Card>
   );
-}
+});

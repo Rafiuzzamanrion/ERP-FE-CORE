@@ -41,5 +41,8 @@ export const apiSlice = createApi({
     "Role",
     "Category",
   ],
+  keepUnusedDataFor: 300,
+  refetchOnMountOrArgChange: true,
+  refetchOnReconnect: true,
   endpoints: () => ({}),
 });

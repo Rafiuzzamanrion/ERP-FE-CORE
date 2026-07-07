@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { RotateCw, Tag, Trash2, Search, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -32,31 +33,66 @@ import NoDataFound from "@/components/shared/NoDataFound";
 import CategoriesListSkeleton from "../components/CategoriesListSkeleton";
 
 export default function CategoriesListPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") ?? ""
+  );
+
+  const search = searchParams.get("search") ?? "";
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 10;
+
   const {
-    data: categories,
+    data: result,
     isLoading,
+    isFetching,
     isError,
     refetch,
-  } = useGetCategoriesQuery();
+  } = useGetCategoriesQuery({
+    search: search || undefined,
+    page,
+    limit,
+  });
+
+  const categories = result?.data ?? [];
+  const meta = result?.meta;
+
   const [createCategory] = useCreateCategoryMutation();
   const [updateCategory] = useUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
 
-  const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const updateParams = useCallback(
+    (updates: Record<string, string>) => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        Object.entries(updates).forEach(([key, value]) => {
+          if (value) {
+            next.set(key, value);
+          } else {
+            next.delete(key);
+          }
+        });
+        if (updates.search !== undefined) {
+          next.delete("page");
+        }
+        return next;
+      });
+    },
+    [setSearchParams]
+  );
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchInput), 400);
+    const timer = setTimeout(() => {
+      if (searchInput !== search) {
+        updateParams({ search: searchInput });
+      }
+    }, 400);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, search, updateParams]);
 
-  const filteredCategories = categories?.filter(
-    (category) =>
-      category.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      (category.description ?? "")
-        .toLowerCase()
-        .includes(debouncedSearch.toLowerCase())
-  );
+  const handlePageChange = (newPage: number) => {
+    updateParams({ page: String(newPage) });
+  };
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<{
@@ -142,6 +178,9 @@ export default function CategoriesListPage() {
     setFormDescription(category.description ?? "");
   };
 
+  const hasNextPage = meta ? page < meta.totalPages : false;
+  const hasPrevPage = page > 1;
+
   return (
     <div>
       <PageHeader
@@ -185,20 +224,18 @@ export default function CategoriesListPage() {
             </Button>
           }
         />
-      ) : !filteredCategories || filteredCategories.length === 0 ? (
+      ) : categories.length === 0 ? (
         <NoDataFound
           title={
-            debouncedSearch
-              ? "No categories match your search"
-              : "No categories found"
+            search ? "No categories match your search" : "No categories found"
           }
           description={
-            debouncedSearch
+            search
               ? "Try a different search term."
               : "Get started by adding your first category."
           }
           action={
-            !debouncedSearch ? (
+            !search ? (
               <Button
                 onClick={() => {
                   resetForm();
@@ -210,7 +247,7 @@ export default function CategoriesListPage() {
               </Button>
             ) : undefined
           }
-          variant={debouncedSearch ? "search" : "empty"}
+          variant={search ? "search" : "empty"}
         />
       ) : (
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
@@ -223,7 +260,7 @@ export default function CategoriesListPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredCategories.map((category) => (
+              {categories.map((category) => (
                 <TableRow key={category._id}>
                   <TableCell className="font-medium capitalize">
                     {category.name}
@@ -255,6 +292,32 @@ export default function CategoriesListPage() {
               ))}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {meta && meta.totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Page {meta.page} of {meta.totalPages} ({meta.total} total)
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={!hasPrevPage || isFetching}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={!hasNextPage || isFetching}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       )}
 

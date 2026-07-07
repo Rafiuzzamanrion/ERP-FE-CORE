@@ -1,5 +1,5 @@
 import { apiSlice } from "@/lib/baseQuery";
-import type { ApiResponse } from "@/types";
+import type { ApiResponse, PaginationMeta } from "@/types";
 
 export interface Category {
   _id: string;
@@ -9,12 +9,37 @@ export interface Category {
   updatedAt: string;
 }
 
+interface GetCategoriesParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+}
+
+interface GetCategoriesResult {
+  data: Category[];
+  meta: PaginationMeta;
+}
+
 export const categoryApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getCategories: builder.query<Category[], void>({
-      query: () => "/categories",
-      transformResponse: (response: ApiResponse<Category[]>) =>
-        response.data ?? [],
+    getCategories: builder.query<
+      GetCategoriesResult,
+      GetCategoriesParams | void
+    >({
+      query: (params) => ({
+        url: "/categories",
+        params: params || undefined,
+      }),
+      transformResponse: (response: ApiResponse<Category[]>) => ({
+        data: response.data ?? [],
+        meta: response.meta ?? {
+          page: 1,
+          limit: response.data?.length ?? 0,
+          total: response.data?.length ?? 0,
+          totalPages: 1,
+        },
+      }),
       providesTags: ["Category"],
     }),
     getCategory: builder.query<ApiResponse<Category>, string>({

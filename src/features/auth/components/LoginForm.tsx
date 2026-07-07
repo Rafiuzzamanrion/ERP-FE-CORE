@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,7 +27,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.output<typeof loginSchema>;
 
-export default function LoginForm() {
+export default memo(function LoginForm() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [login, { isLoading }] = useLoginMutation();
@@ -133,4 +133,4 @@ export default function LoginForm() {
       </Card>
     </motion.div>
   );
-}
+});

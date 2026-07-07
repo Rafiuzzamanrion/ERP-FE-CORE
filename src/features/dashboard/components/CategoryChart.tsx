@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
   Chart,
   XAxis,
@@ -17,9 +17,9 @@ interface CategoryChartProps {
   data: CategoryRevenue[];
 }
 
-export default function CategoryChart({ data }: CategoryChartProps) {
+export default memo(function CategoryChart({ data }: CategoryChartProps) {
   const sortedData = useMemo(
-    () => [...data].sort((a, b) => b.revenue - a.revenue).slice(0, 6),
+    () => [...data].sort((a, b) => b.revenue - a.revenue).slice(0, 8),
     [data]
   );
 
@@ -161,4 +161,4 @@ export default function CategoryChart({ data }: CategoryChartProps) {
       </div>
     </div>
   );
-}
+});
