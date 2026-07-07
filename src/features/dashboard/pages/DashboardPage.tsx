@@ -108,6 +108,7 @@ export default function DashboardPage() {
           icon={<Package className="h-5 w-5" />}
           accent="teal"
           index={0}
+          sparklineData={stats?.categoryRevenue.map((c) => c.revenue)}
         />
         <StatCard
           title="Total Sales"
@@ -115,6 +116,7 @@ export default function DashboardPage() {
           icon={<ShoppingCart className="h-5 w-5" />}
           accent="blue"
           index={1}
+          sparklineData={stats?.dailyRevenue.map((d) => d.sales)}
         />
         <StatCard
           title="Low Stock"
@@ -122,13 +124,15 @@ export default function DashboardPage() {
           icon={<AlertTriangle className="h-5 w-5" />}
           accent="amber"
           index={2}
+          sparklineData={stats?.lowStockProducts.map((p) => p.stockQuantity)}
         />
         <StatCard
           title="Total Revenue"
           value={formatCurrency(stats?.totalRevenue ?? 0)}
           icon={<DollarSign className="h-5 w-5" />}
-          accent="teal"
+          accent="rose"
           index={3}
+          sparklineData={stats?.dailyRevenue.map((d) => d.revenue)}
         />
       </motion.div>
 
