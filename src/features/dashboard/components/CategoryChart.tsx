@@ -8,7 +8,7 @@ interface CategoryChartProps {
 }
 
 export default function CategoryChart({ data }: CategoryChartProps) {
-  const options = useMemo(() => {
+  const options = useMemo<Highcharts.Options>(() => {
     return {
       chart: {
         type: "pie",
@@ -31,15 +31,14 @@ export default function CategoryChart({ data }: CategoryChartProps) {
         pie: {
           innerSize: "60%",
           borderRadius: 6,
-          dataLabels: {
-            enabled: false,
-          },
+          dataLabels: { enabled: false },
           showInLegend: true,
         },
       },
       series: [
         {
           name: "Revenue",
+          type: "pie",
           data: data.map((item) => ({
             name: item.category,
             y: Number(item.revenue.toFixed(2)),
@@ -51,7 +50,7 @@ export default function CategoryChart({ data }: CategoryChartProps) {
             "hsl(38 90% 50%)",
             "hsl(340 75% 55%)",
           ],
-        } as Highcharts.SeriesOptionsType,
+        },
       ],
     };
   }, [data]);
