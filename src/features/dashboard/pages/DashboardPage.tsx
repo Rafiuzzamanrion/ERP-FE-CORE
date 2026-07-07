@@ -18,6 +18,9 @@ import { useGetStatsQuery } from "../dashboardApi";
 import { default as LowStockListComponent } from "../components/LowStockList";
 import { StatCard } from "@/components/shared/StatCard";
 import DashboardSkeleton from "@/components/shared/DashboardSkeleton";
+import RevenueChart from "../components/RevenueChart";
+import CategoryChart from "../components/CategoryChart";
+import RecentSales from "../components/RecentSales";
 
 export default function DashboardPage() {
   const dispatch = useAppDispatch();
@@ -50,11 +53,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <motion.div
-        variants={pageTransition}
-        initial="hidden"
-        animate="visible"
-      >
+      <motion.div variants={pageTransition} initial="hidden" animate="visible">
         <DashboardSkeleton />
       </motion.div>
     );
@@ -73,11 +72,7 @@ export default function DashboardPage() {
             ? (error.data as { message?: string }).message
             : "Failed to load dashboard data"}
         </p>
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => refetch()}
-        >
+        <Button variant="outline" className="mt-4" onClick={() => refetch()}>
           <RefreshCw className="mr-2 h-4 w-4" />
           Retry
         </Button>
@@ -92,10 +87,10 @@ export default function DashboardPage() {
       variants={pageTransition}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="space-y-8"
     >
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
           Overview of your inventory and sales performance
         </p>
@@ -111,28 +106,47 @@ export default function DashboardPage() {
           title="Total Products"
           value={String(stats?.totalProducts ?? 0)}
           icon={<Package className="h-5 w-5" />}
+          accent="teal"
+          index={0}
         />
         <StatCard
           title="Total Sales"
           value={String(stats?.totalSales ?? 0)}
           icon={<ShoppingCart className="h-5 w-5" />}
+          accent="blue"
+          index={1}
         />
         <StatCard
           title="Low Stock"
           value={String(stats?.lowStockCount ?? 0)}
           icon={<AlertTriangle className="h-5 w-5" />}
+          accent="amber"
+          index={2}
         />
         <StatCard
           title="Total Revenue"
           value={formatCurrency(stats?.totalRevenue ?? 0)}
           icon={<DollarSign className="h-5 w-5" />}
+          accent="teal"
+          index={3}
         />
       </motion.div>
 
-      <LowStockListComponent
-        products={stats?.lowStockProducts ?? []}
-        isLoading={isLoading}
-      />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <RevenueChart data={stats?.dailyRevenue ?? []} />
+        </div>
+        <LowStockListComponent products={stats?.lowStockProducts ?? []} />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-1 rounded-xl border bg-card shadow-sm p-6">
+          <CategoryChart data={stats?.categoryRevenue ?? []} />
+        </div>
+        <div className="lg:col-span-2">
+          <RecentSales sales={stats?.recentSales ?? []} />
+        </div>
+      </div>
     </motion.div>
   );
 }

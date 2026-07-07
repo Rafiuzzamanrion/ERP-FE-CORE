@@ -12,8 +12,18 @@ function SessionHydrator({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
   const token = useAppSelector((state) => state.auth.token);
   const user = useAppSelector((state) => state.auth.user);
+  const theme = useAppSelector((state) => state.ui.theme);
 
   const { data, error } = useGetMeQuery(undefined, { skip: !token || !!user });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [theme]);
 
   useEffect(() => {
     if (data?.data && !user) {

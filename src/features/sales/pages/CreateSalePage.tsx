@@ -3,6 +3,13 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import PageHeader from "@/components/shared/PageHeader";
 import ProductSelector from "../components/ProductSelector";
 import SaleCart from "../components/SaleCart";
@@ -86,28 +93,43 @@ export default function CreateSalePage() {
   };
 
   return (
-    <div>
-      <PageHeader>New Sale</PageHeader>
-      <div className="flex gap-6 items-start">
-        <div className="w-2/5">
-          <div className="rounded-xl border bg-card p-4">
-            <h2 className="font-semibold mb-3">Add Products</h2>
+    <div className="space-y-6">
+      <PageHeader
+        title="New Sale"
+        description="Create a new sales transaction"
+      />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+        <Card className="lg:col-span-2 border-none shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle>Add Products</CardTitle>
+            <CardDescription>
+              Search and select products to add to the cart.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <ProductSelector
               onSelect={handleAddProduct}
               excludeIds={excludeIds}
             />
-          </div>
-        </div>
-        <div className="w-3/5">
-          <div className="rounded-xl border bg-card p-4">
-            <h2 className="font-semibold mb-3">Cart</h2>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-3 border-none shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle>Sale Cart</CardTitle>
+            <CardDescription>
+              Review items and complete the sale.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             {errors.items?.root && (
-              <p className="text-sm text-destructive mb-2">
+              <p className="text-sm text-destructive mb-3">
                 {errors.items.root.message}
               </p>
             )}
             {errors.items?.message && (
-              <p className="text-sm text-destructive mb-2">
+              <p className="text-sm text-destructive mb-3">
                 {errors.items.message}
               </p>
             )}
@@ -120,8 +142,8 @@ export default function CreateSalePage() {
               isSubmitting={isSubmitting}
               onSubmit={handleSubmit(onSubmit)}
             />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
