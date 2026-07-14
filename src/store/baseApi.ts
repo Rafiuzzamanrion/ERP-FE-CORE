@@ -1,10 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { RootState } from "../app/store";
+import type { RootState } from "@/store";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+import env from "@/config/env";
 
 export const baseQuery = fetchBaseQuery({
-  baseUrl: API_URL,
+  baseUrl: env.apiUrl,
   credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.token;
@@ -22,8 +22,9 @@ export const baseQueryWithReauth: typeof baseQuery = async (
 ) => {
   const result = await baseQuery(args, api, extraOptions);
   if (result.error && result.error.status === 401) {
-    const { logout } = await import("../features/auth/authSlice");
+    const { logout } = await import("@/features/auth/api/authSlice");
     api.dispatch(logout());
+    document.cookie = "token=; path=/; max-age=0";
     window.location.href = "/login";
   }
   return result;

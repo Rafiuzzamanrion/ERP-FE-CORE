@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,9 +16,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAppDispatch } from "@/app/hooks";
-import { setCredentials } from "../authSlice";
-import { useLoginMutation } from "../authApi";
+import { useAppDispatch } from "@/store/hooks";
+import { setCredentials } from "../api/authSlice";
+import { useLoginMutation } from "../api/authApi";
 
 const loginSchema = z.object({
   email: z.string().email("Valid email required"),
@@ -29,7 +29,7 @@ type LoginFormValues = z.output<typeof loginSchema>;
 
 export default memo(function LoginForm() {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [login, { isLoading }] = useLoginMutation();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -51,7 +51,7 @@ export default memo(function LoginForm() {
         })
       );
       toast.success("Login successful");
-      navigate("/");
+      router.push("/");
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "data" in err

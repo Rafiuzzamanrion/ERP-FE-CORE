@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Pencil, Trash2 } from "lucide-react";
 import {
   Table,
@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { useAppSelector } from "@/app/hooks";
+import { useAppSelector } from "@/store/hooks";
 import { Pagination } from "@/components/shared/Pagination";
 import type { Product, PaginationMeta } from "@/types";
 
@@ -101,7 +101,7 @@ export default memo(function ProductTable({
                         asChild
                         aria-label={`Edit ${product.name}`}
                       >
-                        <Link to={`/products/${product._id}/edit`}>
+                        <Link href={`/products/${product._id}/edit`}>
                           <Pencil className="h-4 w-4" />
                         </Link>
                       </Button>

@@ -1,14 +1,18 @@
-import { Navigate } from "react-router-dom";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Package } from "lucide-react";
-import { useAppSelector } from "@/app/hooks";
+import { useAppSelector } from "@/store/hooks";
 import LoginForm from "../components/LoginForm";
 
 export default function LoginPage() {
+  const router = useRouter();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    router.replace("/");
+    return null;
   }
 
   return (
@@ -23,7 +27,7 @@ export default function LoginPage() {
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary-foreground/20 backdrop-blur">
             <Package className="h-10 w-10" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight">Mini ERP</h1>
+          <h1 className="text-4xl font-bold tracking-tight">ERP</h1>
           <p className="mt-4 text-lg text-primary-foreground/70">
             Inventory &amp; Sales Management System
           </p>

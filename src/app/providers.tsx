@@ -1,13 +1,13 @@
+"use client";
+
 import { useEffect } from "react";
 import { Provider } from "react-redux";
-import { RouterProvider } from "react-router-dom";
 import { Toaster } from "sonner";
-import { store } from "./app/store";
-import { router } from "./app/router";
-import ErrorBoundary from "./app/ErrorBoundary";
-import { useAppDispatch, useAppSelector } from "./app/hooks";
-import { setUser, logout } from "./features/auth/authSlice";
-import { useGetMeQuery } from "./features/auth/authApi";
+import { store } from "@/store";
+import ErrorBoundary from "@/components/shared/ErrorBoundary";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { setUser, logout } from "@/features/auth/api/authSlice";
+import { useGetMeQuery } from "@/features/auth/api/authApi";
 
 function SessionHydrator({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
@@ -38,13 +38,11 @@ function SessionHydrator({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export default function App() {
+export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <ErrorBoundary>
-        <SessionHydrator>
-          <RouterProvider router={router} />
-        </SessionHydrator>
+        <SessionHydrator>{children}</SessionHydrator>
         <Toaster richColors position="top-right" />
       </ErrorBoundary>
     </Provider>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Eye, Search, Plus } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,7 +24,7 @@ import PageHeader from "@/components/shared/PageHeader";
 import NoDataFound from "@/components/shared/NoDataFound";
 import SaleHistorySkeleton from "../components/SaleHistorySkeleton";
 import { Pagination } from "@/components/shared/Pagination";
-import { useGetSalesQuery } from "../saleApi";
+import { useGetSalesQuery } from "../api/saleApi";
 import type { Sale } from "@/types";
 
 export default function SaleHistoryPage() {
@@ -57,7 +57,7 @@ export default function SaleHistoryPage() {
         description="View and track all sales transactions"
       >
         <Button asChild>
-          <Link to="/sales/new">
+          <Link href="/sales/new">
             <Plus className="h-4 w-4" />
             New Sale
           </Link>
@@ -93,7 +93,7 @@ export default function SaleHistoryPage() {
           action={
             !debouncedSearch ? (
               <Button asChild>
-                <Link to="/sales/new">Create Sale</Link>
+                <Link href="/sales/new">Create Sale</Link>
               </Button>
             ) : undefined
           }

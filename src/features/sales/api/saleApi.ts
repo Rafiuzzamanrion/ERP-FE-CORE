@@ -1,4 +1,4 @@
-import { apiSlice } from "@/lib/baseQuery";
+import { apiSlice } from "@/store/baseApi";
 import type { CreateSaleInput, PaginatedResponse, Sale } from "@/types";
 
 export const saleApi = apiSlice.injectEndpoints({

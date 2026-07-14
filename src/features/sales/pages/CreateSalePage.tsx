@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,7 +13,8 @@ import {
 import PageHeader from "@/components/shared/PageHeader";
 import ProductSelector from "../components/ProductSelector";
 import SaleCart from "../components/SaleCart";
-import { useCreateSaleMutation } from "../saleApi";
+import { useCreateSaleMutation } from "../api/saleApi";
+import { useGetProductsQuery } from "@/features/products/api/productApi";
 import type { Product } from "@/types";
 
 const saleFormSchema = z.object({
@@ -33,8 +34,10 @@ const saleFormSchema = z.object({
 type SaleFormValues = z.output<typeof saleFormSchema>;
 
 export default function CreateSalePage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [createSale, { isLoading: isSubmitting }] = useCreateSaleMutation();
+  const { data: productsData, isLoading: isLoadingProducts } =
+    useGetProductsQuery({ limit: 50 }, { skip: false });
 
   const {
     control,
@@ -82,7 +85,7 @@ export default function CreateSalePage() {
         })),
       }).unwrap();
       toast.success("Sale created successfully");
-      navigate("/sales");
+      router.push("/sales");
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "data" in err
@@ -109,6 +112,8 @@ export default function CreateSalePage() {
           </CardHeader>
           <CardContent>
             <ProductSelector
+              products={productsData?.data ?? []}
+              isLoading={isLoadingProducts}
               onSelect={handleAddProduct}
               excludeIds={excludeIds}
             />

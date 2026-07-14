@@ -1,5 +1,8 @@
+"use client";
+
 import { memo, useState, useCallback } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -13,8 +16,8 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { useAppSelector, useAppDispatch } from "@/app/hooks";
-import { toggleSidebar } from "@/app/uiSlice";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { toggleSidebar } from "@/store/slices/uiSlice";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,7 +100,7 @@ export const Sidebar = memo(function Sidebar() {
   const dispatch = useAppDispatch();
   const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
   const user = useAppSelector((state) => state.auth.user);
-  const location = useLocation();
+  const pathname = usePathname();
 
   const isItemVisible = useCallback(
     (item: NavItem) => {
@@ -114,8 +117,8 @@ export const Sidebar = memo(function Sidebar() {
     item: NavItem;
     isActive: boolean;
   }) => (
-    <NavLink
-      to={item.to}
+    <Link
+      href={item.to}
       onClick={() => setMobileOpen(false)}
       className={cn(
         "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
@@ -136,7 +139,7 @@ export const Sidebar = memo(function Sidebar() {
         {item.icon}
       </span>
       {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
-    </NavLink>
+    </Link>
   );
 
   const sidebarContent = (
@@ -166,8 +169,8 @@ export const Sidebar = memo(function Sidebar() {
 
           const matchingItems = visibleItems.filter(
             (item) =>
-              location.pathname === item.to ||
-              (item.to !== "/" && location.pathname.startsWith(`${item.to}/`))
+              pathname === item.to ||
+              (item.to !== "/" && pathname.startsWith(`${item.to}/`))
           );
           const activeItem = matchingItems.sort(
             (a, b) => b.to.length - a.to.length

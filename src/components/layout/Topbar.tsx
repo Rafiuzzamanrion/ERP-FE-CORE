@@ -1,9 +1,12 @@
+"use client";
+
 import { memo, useCallback, useMemo } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import { Sun, Moon, LogOut, ChevronRight, Bell, Home } from "lucide-react";
-import { useAppSelector, useAppDispatch } from "@/app/hooks";
-import { logout } from "@/features/auth/authSlice";
-import { setTheme } from "@/app/uiSlice";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { logout } from "@/features/auth/api/authSlice";
+import { setTheme } from "@/store/slices/uiSlice";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 const breadcrumbMap: Record<string, { label: string; to?: string }[]> = {
   "/": [{ label: "Dashboard" }],
   "/products": [{ label: "Inventory" }, { label: "Products" }],
@@ -39,15 +43,15 @@ function getBreadcrumbs(pathname: string) {
 
 export const Topbar = memo(function Topbar() {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
   const user = useAppSelector((state) => state.auth.user);
   const theme = useAppSelector((state) => state.ui.theme);
 
   const handleLogout = useCallback(() => {
     dispatch(logout());
-    navigate("/login");
-  }, [dispatch, navigate]);
+    router.push("/login");
+  }, [dispatch, router]);
 
   const toggleTheme = useCallback(() => {
     dispatch(setTheme(theme === "light" ? "dark" : "light"));
@@ -58,7 +62,7 @@ export const Topbar = memo(function Topbar() {
       user?.name
         ? user.name
             .split(" ")
-            .map((n) => n[0])
+            .map((n: string) => n[0])
             .join("")
             .toUpperCase()
             .slice(0, 2)
@@ -66,7 +70,7 @@ export const Topbar = memo(function Topbar() {
     [user?.name]
   );
 
-  const breadcrumbs = getBreadcrumbs(location.pathname);
+  const breadcrumbs = getBreadcrumbs(pathname);
 
   return (
     <header className="flex h-16 items-center justify-between border border-border/40 bg-card/85 backdrop-blur-xl px-6 sticky top-3 z-30 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] mx-3 mt-3">
@@ -75,7 +79,7 @@ export const Topbar = memo(function Topbar() {
         aria-label="Breadcrumb"
       >
         <Link
-          to="/"
+          href="/"
           className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-muted/50"
         >
           <Home className="h-4 w-4" />
@@ -85,7 +89,7 @@ export const Topbar = memo(function Topbar() {
             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
             {crumb.to && index < breadcrumbs.length - 1 ? (
               <Link
-                to={crumb.to}
+                href={crumb.to}
                 className="px-2.5 py-0.5 rounded-full bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs font-medium"
               >
                 {crumb.label}

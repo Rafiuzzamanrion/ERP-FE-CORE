@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,13 +8,16 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { useGetProductQuery, useUpdateProductMutation } from "../productApi";
+import {
+  useGetProductQuery,
+  useUpdateProductMutation,
+} from "../api/productApi";
 import ProductForm from "../components/ProductForm";
 import ProductFormSkeleton from "@/components/shared/ProductFormSkeleton";
 
 export default function EditProductPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const {
     data: productResponse,
@@ -30,7 +33,7 @@ export default function EditProductPage() {
     try {
       await updateProduct({ id, body: formData }).unwrap();
       toast.success("Product updated successfully");
-      navigate("/products");
+      router.push("/products");
     } catch (err) {
       const message =
         (err as { data?: { message?: string } })?.data?.message ??
@@ -61,7 +64,7 @@ export default function EditProductPage() {
         <Button
           className="mt-4"
           variant="outline"
-          onClick={() => navigate("/products")}
+          onClick={() => router.push("/products")}
         >
           Back to Products
         </Button>

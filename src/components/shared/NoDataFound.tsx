@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { PackageOpen, SearchX } from "lucide-react";
 import { fadeIn, scaleIn } from "@/lib/motion";
@@ -80,7 +80,7 @@ export function NoDataFound({
           className="mt-6"
         >
           <Button asChild>
-            <Link to={ctaTo}>{ctaLabel}</Link>
+            <Link href={ctaTo}>{ctaLabel}</Link>
           </Button>
         </motion.div>
       )}

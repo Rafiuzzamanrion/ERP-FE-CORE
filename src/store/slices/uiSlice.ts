@@ -5,9 +5,14 @@ interface UiState {
   theme: "light" | "dark";
 }
 
+function getInitialTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "light";
+  return (localStorage.getItem("theme") as "light" | "dark") || "light";
+}
+
 const initialState: UiState = {
   sidebarCollapsed: false,
-  theme: (localStorage.getItem("theme") as "light" | "dark") || "light",
+  theme: getInitialTheme(),
 };
 
 const uiSlice = createSlice({
@@ -19,7 +24,9 @@ const uiSlice = createSlice({
     },
     setTheme: (state, action) => {
       state.theme = action.payload;
-      localStorage.setItem("theme", action.payload);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("theme", action.payload);
+      }
     },
   },
 });

@@ -1,45 +1,40 @@
+"use client";
+
 import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Package } from "lucide-react";
-import { useGetProductsQuery } from "../../products/productApi";
 import type { Product } from "@/types";
 import { cn } from "@/lib/utils";
 
 interface ProductSelectorProps {
+  products: Product[];
+  isLoading?: boolean;
   onSelect: (product: Product) => void;
   excludeIds?: string[];
 }
 
 export default memo(function ProductSelector({
+  products,
+  isLoading = false,
   onSelect,
   excludeIds = [],
 }: ProductSelectorProps) {
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
   const listRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  useEffect(() => {
-    debounceRef.current = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 300);
-    return () => clearTimeout(debounceRef.current);
-  }, [search]);
-
-  const { data, isLoading } = useGetProductsQuery(
-    { search: debouncedSearch || undefined, limit: 50 },
-    { skip: false }
-  );
 
   const filteredProducts = useMemo(() => {
-    if (!data?.data) return [];
-    return data.data.filter(
-      (p) => p.stockQuantity > 0 && !excludeIds.includes(p._id)
+    const term = search.toLowerCase();
+    return products.filter(
+      (p) =>
+        p.stockQuantity > 0 &&
+        !excludeIds.includes(p._id) &&
+        (!term ||
+          p.name.toLowerCase().includes(term) ||
+          p.sku.toLowerCase().includes(term))
     );
-  }, [data, excludeIds]);
+  }, [products, search, excludeIds]);
 
   const handleSelect = useCallback(
     (product: Product) => {

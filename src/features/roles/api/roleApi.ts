@@ -1,4 +1,4 @@
-import { apiSlice } from "@/lib/baseQuery";
+import { apiSlice } from "@/store/baseApi";
 import type { ApiResponse } from "@/types";
 
 interface PermissionRef {

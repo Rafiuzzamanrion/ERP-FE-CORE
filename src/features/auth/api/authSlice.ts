@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import type { User } from "../../types";
+import type { User } from "@/types";
 
 interface AuthState {
   token: string | null;
@@ -8,6 +8,7 @@ interface AuthState {
 }
 
 const getInitialToken = (): string | null => {
+  if (typeof window === "undefined") return null;
   try {
     return localStorage.getItem("token");
   } catch {
@@ -32,7 +33,10 @@ const authSlice = createSlice({
       state.token = action.payload.token;
       state.user = action.payload.user;
       state.isAuthenticated = true;
-      localStorage.setItem("token", action.payload.token);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", action.payload.token);
+        document.cookie = `token=${action.payload.token}; path=/; max-age=86400; SameSite=Lax`;
+      }
     },
     setUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;
@@ -41,7 +45,10 @@ const authSlice = createSlice({
       state.token = null;
       state.user = null;
       state.isAuthenticated = false;
-      localStorage.removeItem("token");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+        document.cookie = "token=; path=/; max-age=0";
+      }
     },
   },
 });

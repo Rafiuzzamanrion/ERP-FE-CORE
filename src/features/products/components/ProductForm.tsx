@@ -2,7 +2,7 @@ import { memo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageUploader } from "@/components/shared/ImageUploader";
-import { useGetCategoriesQuery } from "@/features/categories/categoryApi";
+import { useGetCategoriesQuery } from "@/features/categories/api/categoryApi";
 import type { Product } from "@/types";
 
 const productFormSchema = z.object({
@@ -41,7 +41,7 @@ export default memo(function ProductForm({
   onCancel,
   isLoading,
 }: ProductFormProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
 
@@ -210,7 +210,7 @@ export default memo(function ProductForm({
         <Button
           type="button"
           variant="outline"
-          onClick={onCancel ? onCancel : () => navigate("/products")}
+          onClick={onCancel ? onCancel : () => router.push("/products")}
         >
           Cancel
         </Button>

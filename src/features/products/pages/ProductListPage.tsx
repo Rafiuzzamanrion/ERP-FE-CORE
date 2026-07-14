@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Plus, RotateCw, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAppSelector } from "@/app/hooks";
-import { useGetProductsQuery, useDeleteProductMutation } from "../productApi";
+import { useAppSelector } from "@/store/hooks";
+import {
+  useGetProductsQuery,
+  useDeleteProductMutation,
+} from "../api/productApi";
 import ProductTable from "../components/ProductTable";
 import NoDataFound from "@/components/shared/NoDataFound";
 import ProductListSkeleton from "@/components/shared/ProductListSkeleton";
@@ -18,14 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useGetCategoriesQuery } from "@/features/categories/categoryApi";
+import { useGetCategoriesQuery } from "@/features/categories/api/categoryApi";
 import { AddProductDialog } from "../components/AddProductDialog";
 
 export default function ProductListPage() {
   const user = useAppSelector((state) => state.auth.user);
   const isEmployee = user?.role === "employee";
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [searchInput, setSearchInput] = useState(
     searchParams.get("search") ?? ""
   );
@@ -54,22 +58,20 @@ export default function ProductListPage() {
 
   const updateParams = useCallback(
     (updates: Record<string, string>) => {
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        Object.entries(updates).forEach(([key, value]) => {
-          if (value) {
-            next.set(key, value);
-          } else {
-            next.delete(key);
-          }
-        });
-        if (updates.search !== undefined || updates.category !== undefined) {
-          next.delete("page");
+      const next = new URLSearchParams(searchParams);
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value) {
+          next.set(key, value);
+        } else {
+          next.delete(key);
         }
-        return next;
       });
+      if (updates.search !== undefined || updates.category !== undefined) {
+        next.delete("page");
+      }
+      router.replace(`/products?${next.toString()}`);
     },
-    [setSearchParams]
+    [searchParams, router]
   );
 
   useEffect(() => {

@@ -10,14 +10,14 @@ import {
 import { io as socketIO } from "socket.io-client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useAppSelector, useAppDispatch } from "@/app/hooks";
-import { apiSlice } from "@/lib/baseQuery";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { apiSlice } from "@/store/baseApi";
 import { staggerContainer, pageTransition } from "@/lib/motion";
 import { formatCurrency } from "@/lib/utils";
 import {
   useGetStatsQuery,
   useLazyGetLowStockAlertsQuery,
-} from "../dashboardApi";
+} from "../api/dashboardApi";
 import { default as LowStockListComponent } from "../components/LowStockList";
 import { StatCard } from "@/components/shared/StatCard";
 import DashboardSkeleton from "@/components/shared/DashboardSkeleton";
@@ -25,9 +25,9 @@ import RevenueChart from "../components/RevenueChart";
 import CategoryChart from "../components/CategoryChart";
 import RecentSales from "../components/RecentSales";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace("/api/v1", "")
-  : "http://localhost:5000";
+import env from "@/config/env";
+
+const SOCKET_URL = env.socketUrl;
 
 const POLL_INTERVAL = 15_000;
 

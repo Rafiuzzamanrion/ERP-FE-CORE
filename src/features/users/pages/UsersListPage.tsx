@@ -34,7 +34,7 @@ import {
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
-} from "../userApi";
+} from "../api/userApi";
 import PageHeader from "@/components/shared/PageHeader";
 import NoDataFound from "@/components/shared/NoDataFound";
 import UsersListSkeleton from "../components/UsersListSkeleton";

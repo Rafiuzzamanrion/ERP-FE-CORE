@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useCreateProductMutation } from "../productApi";
+import { useCreateProductMutation } from "../api/productApi";
 import ProductForm from "../components/ProductForm";
 
 interface AddProductDialogProps {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useRouter } from "next/navigation";
 import { RotateCw, Tag, Trash2, Search, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -27,13 +27,14 @@ import {
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
-} from "../categoryApi";
+} from "../api/categoryApi";
 import PageHeader from "@/components/shared/PageHeader";
 import NoDataFound from "@/components/shared/NoDataFound";
 import CategoriesListSkeleton from "../components/CategoriesListSkeleton";
 
 export default function CategoriesListPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [searchInput, setSearchInput] = useState(
     searchParams.get("search") ?? ""
   );
@@ -63,22 +64,20 @@ export default function CategoriesListPage() {
 
   const updateParams = useCallback(
     (updates: Record<string, string>) => {
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        Object.entries(updates).forEach(([key, value]) => {
-          if (value) {
-            next.set(key, value);
-          } else {
-            next.delete(key);
-          }
-        });
-        if (updates.search !== undefined) {
-          next.delete("page");
+      const next = new URLSearchParams(searchParams);
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value) {
+          next.set(key, value);
+        } else {
+          next.delete(key);
         }
-        return next;
       });
+      if (updates.search !== undefined) {
+        next.delete("page");
+      }
+      router.replace(`/categories?${next.toString()}`);
     },
-    [setSearchParams]
+    [searchParams, router]
   );
 
   useEffect(() => {

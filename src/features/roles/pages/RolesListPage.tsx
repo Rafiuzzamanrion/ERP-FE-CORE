@@ -27,7 +27,7 @@ import {
   useCreateRoleMutation,
   useUpdateRoleMutation,
   useDeleteRoleMutation,
-} from "../roleApi";
+} from "../api/roleApi";
 import PageHeader from "@/components/shared/PageHeader";
 import NoDataFound from "@/components/shared/NoDataFound";
 import RolesListSkeleton from "../components/RolesListSkeleton";

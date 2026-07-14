@@ -1,4 +1,4 @@
-import { apiSlice } from "@/lib/baseQuery";
+import { apiSlice } from "@/store/baseApi";
 import type { ApiResponse, PaginationMeta } from "@/types";
 
 export interface Category {
