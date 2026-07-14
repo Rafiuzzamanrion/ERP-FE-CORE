@@ -48,5 +48,9 @@ tsconfig.tsbuildinfo
 # Optional: local config overrides
 .env.*.local
 
+# Next.js
+.next/
+next-env.d.ts
+
 # Vite
 vite.config.ts.timestamp-*
