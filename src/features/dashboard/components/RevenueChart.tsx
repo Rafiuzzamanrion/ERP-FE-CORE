@@ -144,13 +144,13 @@ export default memo(function RevenueChart({ data }: RevenueChartProps) {
           <AreaSplineSeries
             name="Revenue"
             data={revenue}
-            color="hsl(174 72% 40%)"
+            color="var(--color-chart-1)"
             options={{
               fillColor: {
                 linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
                 stops: [
-                  [0, "hsla(174, 72%, 40%, 0.15)"],
-                  [1, "hsla(174, 72%, 40%, 0.01)"],
+                  [0, "hsla(174, 72%, 42%, 0.15)"],
+                  [1, "hsla(174, 72%, 42%, 0.01)"],
                 ],
               },
               zIndex: 2,
@@ -159,7 +159,7 @@ export default memo(function RevenueChart({ data }: RevenueChartProps) {
           <SplineSeries
             name="Sales"
             data={sales}
-            color="hsl(200 85% 55%)"
+            color="var(--color-chart-3)"
             options={{
               yAxis: 1,
               dashStyle: "Dash",

@@ -140,14 +140,14 @@ export default memo(function CategoryChart({ data }: CategoryChartProps) {
             data={barData}
             options={{
               colors: [
-                "hsl(174 72% 42%)",
-                "hsl(185 80% 48%)",
-                "hsl(195 85% 55%)",
-                "hsl(210 75% 58%)",
-                "hsl(260 65% 60%)",
-                "hsl(320 60% 58%)",
-                "hsl(340 70% 60%)",
-                "hsl(30 85% 55%)",
+                "var(--color-chart-1)",
+                "var(--color-chart-2)",
+                "var(--color-chart-3)",
+                "var(--color-chart-4)",
+                "var(--color-chart-5)",
+                "var(--color-chart-6)",
+                "var(--color-chart-7)",
+                "var(--color-chart-8)",
               ],
             }}
           />

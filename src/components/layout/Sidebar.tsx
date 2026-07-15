@@ -145,7 +145,7 @@ export const Sidebar = memo(function Sidebar() {
   const sidebarContent = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center gap-3 px-5">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-500 text-primary-foreground font-bold text-lg shadow-md shadow-primary/25">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-light text-primary-foreground font-bold text-lg shadow-md shadow-primary/25">
           E
         </div>
         {!sidebarCollapsed && (
@@ -253,7 +253,7 @@ export const Sidebar = memo(function Sidebar() {
     <>
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-3.5 z-50 lg:hidden p-2.5 rounded-xl bg-card border border-border/60 shadow-lg shadow-black/5 hover:shadow-xl hover:shadow-black/10 transition-all duration-200"
+        className="fixed left-4 top-3.5 z-50 lg:hidden p-2.5 rounded-xl bg-sidebar-background border border-sidebar-border/60 shadow-lg shadow-black/5 hover:shadow-xl hover:shadow-black/10 transition-all duration-200"
         aria-label="Open sidebar"
       >
         <Menu className="h-5 w-5 text-foreground" />
@@ -268,13 +268,13 @@ export const Sidebar = memo(function Sidebar() {
 
       <aside
         className={cn(
-          "relative flex flex-col bg-card transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "relative flex flex-col bg-sidebar-background transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
           "lg:static lg:translate-x-0",
-          "lg:my-3 lg:ml-3 lg:rounded-2xl lg:border lg:border-border/40 lg:shadow-[0_8px_30px_rgba(0,0,0,0.06)]",
+          "lg:my-3 lg:ml-3 lg:rounded-2xl lg:border lg:border-sidebar-border/40 lg:shadow-[0_8px_30px_rgba(0,0,0,0.06)]",
           sidebarCollapsed ? "w-20" : "w-64",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           mobileOpen &&
-            "fixed inset-y-0 left-0 z-50 w-64 rounded-r-2xl border-r border-border/40 shadow-2xl"
+            "fixed inset-y-0 left-0 z-50 w-64 rounded-r-2xl border-r border-sidebar-border/40 shadow-2xl"
         )}
       >
         {sidebarContent}
