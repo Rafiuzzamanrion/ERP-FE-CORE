@@ -1,9 +1,7 @@
 /**
- * Converts a hex color string to an HSL string suitable for Tailwind v4 CSS variables.
- * Output format: "h s% l%"
- * Example: hexToHslString("#1e9e90") -> "173 68% 37%"
+ * Converts a hex color string to raw HSL values.
  */
-export function hexToHslString(hex: string): string {
+export function hexToHsl(hex: string): { h: number; s: number; l: number } {
   // Remove hash if present
   hex = hex.replace(/^#/, "");
 
@@ -55,5 +53,15 @@ export function hexToHslString(hex: string): string {
   const sPct = Math.round(s * 100);
   const lPct = Math.round(l * 100);
 
-  return `${hDeg} ${sPct}% ${lPct}%`;
+  return { h: hDeg, s: sPct, l: lPct };
+}
+
+/**
+ * Converts a hex color string to an HSL string suitable for Tailwind v4 CSS variables.
+ * Output format: "h s% l%"
+ * Example: hexToHslString("#1e9e90") -> "173 68% 37%"
+ */
+export function hexToHslString(hex: string): string {
+  const { h, s, l } = hexToHsl(hex);
+  return `${h} ${s}% ${l}%`;
 }

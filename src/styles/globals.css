@@ -195,18 +195,18 @@ select:disabled,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(170 18% 78%);
+  background: var(--color-scrollbar, hsl(170 18% 78%));
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(170 18% 65%);
+  background: var(--color-scrollbar-hover, hsl(170 18% 65%));
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: hsl(210 18% 28%);
+  background: var(--color-scrollbar, hsl(210 18% 28%));
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: hsl(210 18% 38%);
+  background: var(--color-scrollbar-hover, hsl(210 18% 38%));
 }

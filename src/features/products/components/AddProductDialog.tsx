@@ -1,13 +1,14 @@
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useCreateProductMutation } from "../api/productApi";
 import ProductForm from "../components/ProductForm";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@/components/shared/Modal";
+import { Button } from "@/components/ui/button";
 
 interface AddProductDialogProps {
   open: boolean;
@@ -37,20 +38,34 @@ export function AddProductDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Add Product</DialogTitle>
-          <DialogDescription>
-            Create a new product in your inventory.
-          </DialogDescription>
-        </DialogHeader>
-        <ProductForm
-          onSubmit={handleSubmit}
-          onCancel={() => onOpenChange(false)}
-          isLoading={isLoading}
+    <Modal open={open} onOpenChange={onOpenChange}>
+      <ModalContent className="max-w-2xl">
+        <ModalHeader
+          title="Add Product"
+          description="Create a new product in your inventory."
         />
-      </DialogContent>
-    </Dialog>
+        <ModalBody>
+          <ProductForm
+            formId="add-product-form"
+            hideActions
+            onSubmit={handleSubmit}
+            isLoading={isLoading}
+          />
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="outline"
+            className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" form="add-product-form" loading={isLoading}>
+            Create Product
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 }

@@ -33,6 +33,8 @@ interface ProductFormProps {
   onSubmit: (data: FormData) => Promise<void>;
   onCancel?: () => void;
   isLoading?: boolean;
+  hideActions?: boolean;
+  formId?: string;
 }
 
 export default memo(function ProductForm({
@@ -40,6 +42,8 @@ export default memo(function ProductForm({
   onSubmit,
   onCancel,
   isLoading,
+  hideActions = false,
+  formId,
 }: ProductFormProps) {
   const router = useRouter();
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -86,7 +90,11 @@ export default memo(function ProductForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+    <form
+      id={formId}
+      onSubmit={handleSubmit(onFormSubmit)}
+      className="space-y-6"
+    >
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name">Product Name</Label>
@@ -206,18 +214,20 @@ export default memo(function ProductForm({
         {imageError && <p className="text-sm text-destructive">{imageError}</p>}
       </div>
 
-      <div className="flex gap-3 justify-end pt-4 border-t">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel ? onCancel : () => router.push("/products")}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" loading={isLoading}>
-          {initialData ? "Update Product" : "Create Product"}
-        </Button>
-      </div>
+      {!hideActions && (
+        <div className="flex gap-3 justify-end pt-4 border-t">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel ? onCancel : () => router.push("/products")}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" loading={isLoading}>
+            {initialData ? "Update Product" : "Create Product"}
+          </Button>
+        </div>
+      )}
     </form>
   );
 });
