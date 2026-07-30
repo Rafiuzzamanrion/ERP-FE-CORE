@@ -18,12 +18,34 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import type { DailyRevenue } from "@/types";
+import { useAppSelector } from "@/store/hooks";
 
 interface RevenueChartProps {
   data: DailyRevenue[];
 }
 
 export default memo(function RevenueChart({ data }: RevenueChartProps) {
+  const primaryColorHex = useAppSelector((state) => state.ui.primaryColor);
+
+  const rgb = useMemo(() => {
+    const hex = (primaryColorHex || "#1e9e90").replace(/^#/, "");
+    let r = 0,
+      g = 0,
+      b = 0;
+    if (hex.length === 6) {
+      r = parseInt(hex.substring(0, 2), 16);
+      g = parseInt(hex.substring(2, 4), 16);
+      b = parseInt(hex.substring(4, 6), 16);
+    } else if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else {
+      return "30, 158, 144";
+    }
+    return `${r}, ${g}, ${b}`;
+  }, [primaryColorHex]);
+
   const categories = useMemo(
     () =>
       data.map((d) =>
@@ -149,8 +171,8 @@ export default memo(function RevenueChart({ data }: RevenueChartProps) {
               fillColor: {
                 linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
                 stops: [
-                  [0, "hsla(174, 72%, 42%, 0.15)"],
-                  [1, "hsla(174, 72%, 42%, 0.01)"],
+                  [0, `rgba(${rgb}, 0.15)`],
+                  [1, `rgba(${rgb}, 0.01)`],
                 ],
               },
               zIndex: 2,

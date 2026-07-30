@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -56,6 +56,20 @@ export const Topbar = memo(function Topbar() {
   const user = useAppSelector((state) => state.auth.user);
   const theme = useAppSelector((state) => state.ui.theme);
   const primaryColorHex = useAppSelector((state) => state.ui.primaryColor);
+
+  const [localColor, setLocalColor] = useState<string | null>(primaryColorHex);
+
+  useEffect(() => {
+    setLocalColor(primaryColorHex);
+  }, [primaryColorHex]);
+
+  useEffect(() => {
+    if (localColor === primaryColorHex) return;
+    const timer = setTimeout(() => {
+      dispatch(setPrimaryColor(localColor));
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [localColor, dispatch, primaryColorHex]);
 
   const handleLogout = useCallback(() => {
     dispatch(logout());
@@ -120,18 +134,18 @@ export const Topbar = memo(function Topbar() {
             className="rounded-full hover:bg-muted/80 transition-all duration-300 overflow-hidden relative cursor-pointer"
             aria-label="Change primary color"
           >
-            {primaryColorHex ? (
+            {localColor ? (
               <div
                 className="h-4 w-4 rounded-full border border-black/10 dark:border-white/10"
-                style={{ backgroundColor: primaryColorHex }}
+                style={{ backgroundColor: localColor }}
               />
             ) : (
               <Palette className="h-[18px] w-[18px] text-muted-foreground" />
             )}
             <input
               type="color"
-              value={primaryColorHex || "#19998e"}
-              onChange={(e) => dispatch(setPrimaryColor(e.target.value))}
+              value={localColor || "#19998e"}
+              onChange={(e) => setLocalColor(e.target.value)}
               className="absolute inset-0 opacity-0 cursor-pointer h-full w-full"
             />
           </Button>

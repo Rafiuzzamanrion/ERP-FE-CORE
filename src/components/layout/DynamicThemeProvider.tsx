@@ -22,23 +22,17 @@ export function DynamicThemeProvider({
 
     const hslValue = hexToHslString(primaryColorHex);
 
-    // We can also calculate a lighter/darker variant if needed,
-    // but the easiest approach is to apply the primary color HSL to the relevant variables.
     return (
       <style>{`
-        :root {
+        :root, .dark {
           --color-primary: hsl(${hslValue});
+          --color-primary-light: color-mix(in srgb, hsl(${hslValue}) 85%, white);
           --color-ring: hsl(${hslValue});
           --color-sidebar-primary: hsl(${hslValue});
           --color-chart-1: hsl(${hslValue});
           --color-stat-teal: hsl(${hslValue});
-        }
-        .dark {
-          --color-primary: hsl(${hslValue});
-          --color-ring: hsl(${hslValue});
-          --color-sidebar-primary: hsl(${hslValue});
-          --color-chart-1: hsl(${hslValue});
-          --color-stat-teal: hsl(${hslValue});
+          --color-stat-teal-light: color-mix(in srgb, hsl(${hslValue}) 85%, white);
+          --color-stat-teal-dark: color-mix(in srgb, hsl(${hslValue}) 80%, black);
         }
       `}</style>
     );
