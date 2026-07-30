@@ -3,10 +3,18 @@
 import { memo, useCallback, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { Sun, Moon, LogOut, ChevronRight, Bell, Home } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  LogOut,
+  ChevronRight,
+  Bell,
+  Home,
+  Palette,
+} from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { logout } from "@/features/auth/api/authSlice";
-import { setTheme } from "@/store/slices/uiSlice";
+import { setTheme, setPrimaryColor } from "@/store/slices/uiSlice";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +55,7 @@ export const Topbar = memo(function Topbar() {
   const pathname = usePathname();
   const user = useAppSelector((state) => state.auth.user);
   const theme = useAppSelector((state) => state.ui.theme);
+  const primaryColorHex = useAppSelector((state) => state.ui.primaryColor);
 
   const handleLogout = useCallback(() => {
     dispatch(logout());
@@ -104,6 +113,39 @@ export const Topbar = memo(function Topbar() {
       </nav>
 
       <div className="flex items-center gap-1.5">
+        <div className="relative flex items-center group">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full hover:bg-muted/80 transition-all duration-300 overflow-hidden relative cursor-pointer"
+            aria-label="Change primary color"
+          >
+            {primaryColorHex ? (
+              <div
+                className="h-4 w-4 rounded-full border border-black/10 dark:border-white/10"
+                style={{ backgroundColor: primaryColorHex }}
+              />
+            ) : (
+              <Palette className="h-[18px] w-[18px] text-muted-foreground" />
+            )}
+            <input
+              type="color"
+              value={primaryColorHex || "#19998e"}
+              onChange={(e) => dispatch(setPrimaryColor(e.target.value))}
+              className="absolute inset-0 opacity-0 cursor-pointer h-full w-full"
+            />
+          </Button>
+          {primaryColorHex && (
+            <button
+              onClick={() => dispatch(setPrimaryColor(null))}
+              className="absolute -top-1 -right-1 h-4 w-4 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Reset to default color"
+            >
+              ×
+            </button>
+          )}
+        </div>
+
         <Button
           variant="ghost"
           size="icon"
