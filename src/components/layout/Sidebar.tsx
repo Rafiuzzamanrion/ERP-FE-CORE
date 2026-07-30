@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useCallback } from "react";
+import { memo, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { toggleSidebar } from "@/store/slices/uiSlice";
+import { toggleSidebar, setMobileOpen } from "@/store/slices/uiSlice";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,16 +96,16 @@ const navSections: { title: string; items: NavItem[] }[] = [
 ];
 
 export const Sidebar = memo(function Sidebar() {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const dispatch = useAppDispatch();
   const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
+  const mobileOpen = useAppSelector((state) => state.ui.mobileOpen);
   const user = useAppSelector((state) => state.auth.user);
   const pathname = usePathname();
 
   const isItemVisible = useCallback(
     (item: NavItem) => {
       if (!item.roles) return true;
-      return user ? item.roles.includes(user.role) : false;
+      return user ? item.roles.includes(user.role.toLowerCase()) : false;
     },
     [user]
   );
@@ -119,7 +119,7 @@ export const Sidebar = memo(function Sidebar() {
   }) => (
     <Link
       href={item.to}
-      onClick={() => setMobileOpen(false)}
+      onClick={() => dispatch(setMobileOpen(false))}
       className={cn(
         "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
         isActive
@@ -242,7 +242,7 @@ export const Sidebar = memo(function Sidebar() {
         variant="ghost"
         size="icon"
         className="absolute top-4 right-4 lg:hidden rounded-lg"
-        onClick={() => setMobileOpen(false)}
+        onClick={() => dispatch(setMobileOpen(false))}
       >
         <X className="h-5 w-5" />
       </Button>
@@ -251,30 +251,20 @@ export const Sidebar = memo(function Sidebar() {
 
   return (
     <>
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-3.5 z-50 lg:hidden p-2.5 rounded-xl bg-sidebar-background border border-sidebar-border/60 shadow-lg shadow-black/5 hover:shadow-xl hover:shadow-black/10 transition-all duration-200"
-        aria-label="Open sidebar"
-      >
-        <Menu className="h-5 w-5 text-foreground" />
-      </button>
-
       {mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden transition-all duration-300"
-          onClick={() => setMobileOpen(false)}
+          onClick={() => dispatch(setMobileOpen(false))}
         />
       )}
 
       <aside
         className={cn(
-          "relative flex flex-col bg-sidebar-background transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
-          "lg:static lg:translate-x-0",
-          "lg:my-3 lg:ml-3 lg:rounded-2xl lg:border lg:border-sidebar-border/40 lg:shadow-[0_8px_30px_rgba(0,0,0,0.06)]",
-          sidebarCollapsed ? "w-20" : "w-64",
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-          mobileOpen &&
-            "fixed inset-y-0 left-0 z-50 w-64 rounded-r-2xl border-r border-sidebar-border/40 shadow-2xl"
+          "flex flex-col bg-sidebar-background transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "fixed inset-y-0 left-0 z-50 w-64 rounded-r-2xl border-r border-sidebar-border/40 shadow-2xl",
+          "lg:static lg:z-auto lg:my-3 lg:ml-3 lg:rounded-2xl lg:border lg:shadow-[0_8px_30px_rgba(0,0,0,0.06)]",
+          sidebarCollapsed ? "lg:w-20" : "lg:w-64",
+          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
         {sidebarContent}

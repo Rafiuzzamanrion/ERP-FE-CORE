@@ -11,10 +11,15 @@ import {
   Bell,
   Home,
   Palette,
+  Menu,
 } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { logout } from "@/features/auth/api/authSlice";
-import { setTheme, setPrimaryColor } from "@/store/slices/uiSlice";
+import {
+  setTheme,
+  setPrimaryColor,
+  setMobileOpen,
+} from "@/store/slices/uiSlice";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -96,37 +101,47 @@ export const Topbar = memo(function Topbar() {
   const breadcrumbs = getBreadcrumbs(pathname);
 
   return (
-    <header className="flex h-16 items-center justify-between border border-border/40 bg-card/85 backdrop-blur-xl px-6 sticky top-3 z-30 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] mx-3 mt-3">
-      <nav
-        className="flex items-center gap-1.5 text-sm"
-        aria-label="Breadcrumb"
-      >
-        <Link
-          href="/"
-          className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-muted/50"
+    <header className="flex h-16 items-center justify-between border border-border/40 bg-card/85 backdrop-blur-xl px-4 lg:px-6 sticky top-3 z-30 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] mx-3 mt-3 overflow-hidden">
+      <div className="flex items-center gap-2 lg:gap-3 flex-1 min-w-0 pr-2">
+        <button
+          onClick={() => dispatch(setMobileOpen(true))}
+          className="lg:hidden p-2 -ml-2 shrink-0 rounded-xl text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
+          aria-label="Open sidebar"
         >
-          <Home className="h-4 w-4" />
-        </Link>
-        {breadcrumbs.map((crumb, index) => (
-          <div key={index} className="flex items-center gap-1.5">
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-            {crumb.to && index < breadcrumbs.length - 1 ? (
-              <Link
-                href={crumb.to}
-                className="px-2.5 py-0.5 rounded-full bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs font-medium"
-              >
-                {crumb.label}
-              </Link>
-            ) : (
-              <span className="font-semibold text-foreground text-sm">
-                {crumb.label}
-              </span>
-            )}
-          </div>
-        ))}
-      </nav>
+          <Menu className="h-5 w-5" />
+        </button>
 
-      <div className="flex items-center gap-1.5">
+        <nav
+          className="flex items-center gap-1.5 text-sm overflow-x-auto no-scrollbar whitespace-nowrap"
+          aria-label="Breadcrumb"
+        >
+          <Link
+            href="/"
+            className="shrink-0 text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-muted/50"
+          >
+            <Home className="h-4 w-4" />
+          </Link>
+          {breadcrumbs.map((crumb, index) => (
+            <div key={index} className="flex items-center gap-1.5 shrink-0">
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+              {crumb.to && index < breadcrumbs.length - 1 ? (
+                <Link
+                  href={crumb.to}
+                  className="px-2.5 py-0.5 rounded-full bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs font-medium"
+                >
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span className="font-semibold text-foreground text-sm">
+                  {crumb.label}
+                </span>
+              )}
+            </div>
+          ))}
+        </nav>
+      </div>
+
+      <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
         <div className="relative flex items-center group">
           <Button
             variant="ghost"
@@ -191,7 +206,7 @@ export const Topbar = memo(function Topbar() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="rounded-full pl-2 pr-3 py-1.5 h-auto gap-2.5 hover:bg-muted/80 transition-all duration-200"
+              className="rounded-full p-1 sm:pl-2 sm:pr-3 sm:py-1.5 h-auto gap-2.5 hover:bg-muted/80 transition-all duration-200"
             >
               <Avatar className="h-8 w-8 ring-2 ring-border/50">
                 <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary text-xs font-bold">

@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/select";
 import { useGetCategoriesQuery } from "@/features/categories/api/categoryApi";
 import { AddProductDialog } from "../components/AddProductDialog";
+import { NavTabs, NavTabItem } from "@/components/shared/NavTabs";
+import { Package, Tags, Warehouse } from "lucide-react";
 
 export default function ProductListPage() {
   const user = useAppSelector((state) => state.auth.user);
@@ -125,6 +127,63 @@ export default function ProductListPage() {
           </Button>
         )}
       </div>
+
+      <NavTabs>
+        <NavTabItem href="/products" icon={<Package size={16} />}>
+          All Products
+        </NavTabItem>
+        <NavTabItem href="/products/categories" icon={<Tags size={16} />}>
+          Categories
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
+          Inventory Status
+        </NavTabItem>
+      </NavTabs>
 
       <Card className="border-none shadow-sm">
         <CardContent className="p-4">

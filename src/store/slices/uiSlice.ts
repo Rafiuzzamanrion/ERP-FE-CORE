@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface UiState {
   sidebarCollapsed: boolean;
+  mobileOpen: boolean;
   theme: "light" | "dark";
   primaryColor: string | null;
 }
@@ -18,6 +19,7 @@ function getInitialPrimaryColor(): string | null {
 
 const initialState: UiState = {
   sidebarCollapsed: false,
+  mobileOpen: false,
   theme: getInitialTheme(),
   primaryColor: getInitialPrimaryColor(),
 };
@@ -28,6 +30,9 @@ const uiSlice = createSlice({
   reducers: {
     toggleSidebar: (state) => {
       state.sidebarCollapsed = !state.sidebarCollapsed;
+    },
+    setMobileOpen: (state, action: PayloadAction<boolean>) => {
+      state.mobileOpen = action.payload;
     },
     setTheme: (state, action: PayloadAction<"light" | "dark">) => {
       state.theme = action.payload;
@@ -48,5 +53,6 @@ const uiSlice = createSlice({
   },
 });
 
-export const { toggleSidebar, setTheme, setPrimaryColor } = uiSlice.actions;
+export const { toggleSidebar, setMobileOpen, setTheme, setPrimaryColor } =
+  uiSlice.actions;
 export default uiSlice.reducer;

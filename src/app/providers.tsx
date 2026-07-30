@@ -8,6 +8,7 @@ import ErrorBoundary from "@/components/shared/ErrorBoundary";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setUser, logout } from "@/features/auth/api/authSlice";
 import { useGetMeQuery } from "@/features/auth/api/authApi";
+import { DynamicThemeProvider } from "@/components/layout/DynamicThemeProvider";
 
 function SessionHydrator({ children }: { children: React.ReactNode }) {
   const dispatch = useAppDispatch();
@@ -42,7 +43,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <ErrorBoundary>
-        <SessionHydrator>{children}</SessionHydrator>
+        <SessionHydrator>
+          <DynamicThemeProvider>{children}</DynamicThemeProvider>
+        </SessionHydrator>
         <Toaster richColors position="top-right" />
       </ErrorBoundary>
     </Provider>
