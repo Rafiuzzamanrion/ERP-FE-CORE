@@ -10,6 +10,14 @@ import {
 import { io as socketIO } from "socket.io-client";
 import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { apiSlice } from "@/store/baseApi";
 import { staggerContainer, pageTransition } from "@/lib/motion";
@@ -148,11 +156,40 @@ export default function DashboardPage() {
       animate="visible"
       className="space-y-8"
     >
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Overview of your inventory and sales performance
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Overview of your inventory and sales performance
+          </p>
+        </div>
+        <Drawer>
+          <DrawerTrigger asChild>
+            <Button variant="outline">Quick View Demo</Button>
+          </DrawerTrigger>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Quick Stats Demo</DrawerTitle>
+              <DrawerDescription>
+                This is a demonstration of the new Slide-over Drawer component.
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="mt-6 space-y-4">
+              <div className="rounded-lg border p-4 shadow-sm bg-card">
+                <p className="text-sm text-muted-foreground">Active Products</p>
+                <p className="text-2xl font-bold">
+                  {stats?.totalProducts ?? 0}
+                </p>
+              </div>
+              <div className="rounded-lg border p-4 shadow-sm bg-card">
+                <p className="text-sm text-muted-foreground">Revenue</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(stats?.totalRevenue ?? 0)}
+                </p>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
       </div>
 
       <motion.div
