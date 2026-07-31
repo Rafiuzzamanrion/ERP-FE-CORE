@@ -14,6 +14,7 @@ import {
   Menu,
 } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { useDebounce } from "@/hooks/useDebounce";
 import { logout } from "@/features/auth/api/authSlice";
 import {
   setTheme,
@@ -63,18 +64,16 @@ export const Topbar = memo(function Topbar() {
   const primaryColorHex = useAppSelector((state) => state.ui.primaryColor);
 
   const [localColor, setLocalColor] = useState<string | null>(primaryColorHex);
+  const debouncedColor = useDebounce(localColor, 150);
 
   useEffect(() => {
     setLocalColor(primaryColorHex);
   }, [primaryColorHex]);
 
   useEffect(() => {
-    if (localColor === primaryColorHex) return;
-    const timer = setTimeout(() => {
-      dispatch(setPrimaryColor(localColor));
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [localColor, dispatch, primaryColorHex]);
+    if (debouncedColor === primaryColorHex) return;
+    dispatch(setPrimaryColor(debouncedColor));
+  }, [debouncedColor, dispatch, primaryColorHex]);
 
   const handleLogout = useCallback(() => {
     dispatch(logout());

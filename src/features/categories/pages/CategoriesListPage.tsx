@@ -1,19 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { RotateCw, Tag, Trash2, Search, Pencil } from "lucide-react";
+import { RotateCw, Tag, Trash2, Pencil, Download } from "lucide-react";
 import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +21,15 @@ import {
 } from "../api/categoryApi";
 import PageHeader from "@/components/shared/PageHeader";
 import NoDataFound from "@/components/shared/NoDataFound";
-import CategoriesListSkeleton from "../components/CategoriesListSkeleton";
+import { DataTable } from "@/components/shared/DataTable";
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+
+type Category = {
+  _id: string;
+  name: string;
+  description?: string;
+};
 
 export default function CategoriesListPage() {
   const searchParams = useSearchParams();
@@ -41,7 +40,7 @@ export default function CategoriesListPage() {
 
   const search = searchParams.get("search") ?? "";
   const page = Number(searchParams.get("page")) || 1;
-  const limit = 10;
+  const limit = Number(searchParams.get("limit")) || 10;
 
   const {
     data: result,
@@ -80,25 +79,16 @@ export default function CategoriesListPage() {
     [searchParams, router]
   );
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchInput !== search) {
-        updateParams({ search: searchInput });
-      }
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchInput, search, updateParams]);
-
   const handlePageChange = (newPage: number) => {
     updateParams({ page: String(newPage) });
   };
 
+  const handleRowsPerPageChange = (newLimit: number) => {
+    updateParams({ limit: String(newLimit), page: "1" });
+  };
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editCategory, setEditCategory] = useState<{
-    _id: string;
-    name: string;
-    description?: string;
-  } | null>(null);
+  const [editCategory, setEditCategory] = useState<Category | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const [formName, setFormName] = useState("");
@@ -167,18 +157,86 @@ export default function CategoriesListPage() {
     }
   };
 
-  const openEdit = (category: {
-    _id: string;
-    name: string;
-    description?: string;
-  }) => {
+  const openEdit = (category: Category) => {
     setEditCategory(category);
     setFormName(category.name);
     setFormDescription(category.description ?? "");
   };
 
-  const hasNextPage = meta ? page < meta.totalPages : false;
-  const hasPrevPage = page > 1;
+  const columns: ColumnDef<Category>[] = useMemo(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+            className="translate-y-[2px]"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => (
+          <div className="font-medium capitalize">{row.getValue("name")}</div>
+        ),
+      },
+      {
+        accessorKey: "description",
+        header: "Description",
+        cell: ({ row }) => (
+          <div className="text-muted-foreground">
+            {row.getValue("description") ?? "—"}
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => {
+          const category = row.original;
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Edit ${category.name}`}
+                onClick={() => openEdit(category)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Delete ${category.name}`}
+                onClick={() => setDeleteId(category._id)}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    []
+  );
 
   return (
     <div>
@@ -197,23 +255,7 @@ export default function CategoriesListPage() {
         </Button>
       </PageHeader>
 
-      <Card className="mb-6 border-none shadow-sm">
-        <CardContent className="p-4">
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search categories..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {isLoading ? (
-        <CategoriesListSkeleton />
-      ) : isError ? (
+      {isError ? (
         <NoDataFound
           title="Failed to load categories"
           action={
@@ -223,101 +265,66 @@ export default function CategoriesListPage() {
             </Button>
           }
         />
-      ) : categories.length === 0 ? (
-        <NoDataFound
-          title={
+      ) : (
+        <DataTable
+          columns={columns}
+          data={categories}
+          isLoading={isLoading || isFetching}
+          skeletonRows={5}
+          enableSearch
+          searchPlaceholder="Search categories..."
+          searchValue={searchInput}
+          onSearchChange={(val) => {
+            setSearchInput(val);
+            updateParams({ search: val });
+          }}
+          pagination={{
+            currentPage: meta?.page ?? 1,
+            totalCount: meta?.total ?? 0,
+            rowsPerPage: meta?.limit ?? 10,
+            pageSizeOptions: [10, 20, 50],
+            onPageChange: handlePageChange,
+            onRowsPerPageChange: handleRowsPerPageChange,
+          }}
+          bulkActions={{
+            render: (rows, disabled) => (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 bg-background shadow-sm border-border/60"
+                  disabled={disabled}
+                  onClick={() =>
+                    popup.success(`Exporting ${rows.length} categories…`)
+                  }
+                >
+                  <Download className="mr-1.5 h-3.5 w-3.5" />
+                  Export
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 shadow-sm"
+                  disabled={disabled}
+                  onClick={() =>
+                    popup.error(`Deleted ${rows.length} categories`)
+                  }
+                >
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                  Delete
+                </Button>
+              </>
+            ),
+          }}
+          emptyTitle={
             search ? "No categories match your search" : "No categories found"
           }
-          description={
+          emptyDescription={
             search
               ? "Try a different search term."
               : "Get started by adding your first category."
           }
-          action={
-            !search ? (
-              <Button
-                onClick={() => {
-                  resetForm();
-                  setIsCreateOpen(true);
-                }}
-              >
-                <Tag className="h-4 w-4" />
-                Add Category
-              </Button>
-            ) : undefined
-          }
-          variant={search ? "search" : "empty"}
         />
-      ) : (
-        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="w-24 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {categories.map((category) => (
-                <TableRow key={category._id}>
-                  <TableCell className="font-medium capitalize">
-                    {category.name}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {category.description ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Edit ${category.name}`}
-                        onClick={() => openEdit(category)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Delete ${category.name}`}
-                        onClick={() => setDeleteId(category._id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-
-      {meta && meta.totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {meta.page} of {meta.totalPages} ({meta.total} total)
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(page - 1)}
-              disabled={!hasPrevPage || isFetching}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(page + 1)}
-              disabled={!hasNextPage || isFetching}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
       )}
 
       {/* Create Dialog */}

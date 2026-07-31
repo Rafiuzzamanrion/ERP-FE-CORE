@@ -1,26 +1,27 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import Link from "next/link";
-import { Pencil, Trash2 } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Pencil, Trash2, SlidersHorizontal, Download } from "lucide-react";
+import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/utils";
 import { useAppSelector } from "@/store/hooks";
-import { Pagination } from "@/components/shared/Pagination";
+import { DataTable } from "@/components/shared/DataTable";
+import { popup } from "@/components/shared/popup";
 import type { Product, PaginationMeta } from "@/types";
+import { ReactNode } from "react";
 
 interface ProductTableProps {
   products: Product[];
   meta?: PaginationMeta;
+  isLoading?: boolean;
+  search: string;
+  onSearchChange: (value: string) => void;
   onPageChange: (page: number) => void;
+  onRowsPerPageChange: (limit: number) => void;
   onDelete: (id: string) => void;
+  extraToolbar?: ReactNode;
 }
 
 function getStockVariant(qty: number): "success" | "warning" | "destructive" {
@@ -32,104 +33,213 @@ function getStockVariant(qty: number): "success" | "warning" | "destructive" {
 export default memo(function ProductTable({
   products,
   meta,
+  isLoading,
+  search,
+  onSearchChange,
   onPageChange,
+  onRowsPerPageChange,
   onDelete,
+  extraToolbar,
 }: ProductTableProps) {
   const user = useAppSelector((state) => state.auth.user);
   const isEmployee = user?.role === "employee";
 
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-16">Product</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead className="text-right">Purchase</TableHead>
-              <TableHead className="text-right">Selling</TableHead>
-              <TableHead className="text-center">Stock</TableHead>
-              {!isEmployee && (
-                <TableHead className="w-24 text-right">Actions</TableHead>
-              )}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {products.map((product) => (
-              <TableRow key={product._id} className="group">
-                <TableCell>
-                  {product.imageUrl ? (
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      className="h-11 w-11 rounded-lg object-cover border"
-                    />
-                  ) : (
-                    <div className="h-11 w-11 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground border">
-                      N/A
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground">
-                  {product.sku}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className="capitalize">
-                    {product.category}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right text-muted-foreground">
-                  {formatCurrency(product.purchasePrice)}
-                </TableCell>
-                <TableCell className="text-right font-medium">
-                  {formatCurrency(product.sellingPrice)}
-                </TableCell>
-                <TableCell className="text-center">
-                  <Badge variant={getStockVariant(product.stockQuantity)}>
-                    {product.stockQuantity}
-                  </Badge>
-                </TableCell>
-                {!isEmployee && (
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        asChild
-                        aria-label={`Edit ${product.name}`}
-                      >
-                        <Link href={`/products/${product._id}/edit`}>
-                          <Pencil className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Delete ${product.name}`}
-                        onClick={() => onDelete(product._id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                )}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+  const columns: ColumnDef<Product>[] = useMemo(() => {
+    const cols: ColumnDef<Product>[] = [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+            className="translate-y-[2px]"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        id: "image",
+        header: "Product",
+        cell: ({ row }) => {
+          const product = row.original;
+          return product.imageUrl ? (
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="h-11 w-11 rounded-lg object-cover border border-border/60 shadow-sm"
+            />
+          ) : (
+            <div className="h-11 w-11 rounded-lg bg-muted flex items-center justify-center text-[10px] text-muted-foreground border border-border/60">
+              N/A
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => (
+          <div className="font-medium text-foreground">
+            {row.getValue("name")}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "sku",
+        header: "SKU",
+        cell: ({ row }) => (
+          <div className="font-mono text-xs text-muted-foreground">
+            {row.getValue("sku")}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "category",
+        header: "Category",
+        cell: ({ row }) => (
+          <Badge variant="secondary" className="capitalize font-normal text-xs">
+            {row.getValue("category")}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "purchasePrice",
+        header: () => <div className="text-right">Purchase</div>,
+        cell: ({ row }) => (
+          <div className="text-right text-muted-foreground text-sm whitespace-nowrap">
+            {formatCurrency(row.getValue("purchasePrice"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "sellingPrice",
+        header: () => <div className="text-right">Selling</div>,
+        cell: ({ row }) => (
+          <div className="text-right font-semibold text-primary whitespace-nowrap">
+            {formatCurrency(row.getValue("sellingPrice"))}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "stockQuantity",
+        header: () => <div className="text-center">Stock</div>,
+        cell: ({ row }) => {
+          const qty = row.getValue("stockQuantity") as number;
+          return (
+            <div className="flex justify-center">
+              <Badge
+                variant={getStockVariant(qty)}
+                className="font-semibold shadow-sm"
+              >
+                {qty}
+              </Badge>
+            </div>
+          );
+        },
+      },
+    ];
 
-      {meta && meta.totalPages > 1 && (
-        <Pagination
-          page={meta.page}
-          totalPages={meta.totalPages}
-          total={meta.total}
-          onPageChange={onPageChange}
-        />
-      )}
-    </div>
+    if (!isEmployee) {
+      cols.push({
+        id: "actions",
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => {
+          const product = row.original;
+          return (
+            <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                aria-label={`Edit ${product.name}`}
+              >
+                <Link href={`/products/${product._id}/edit`}>
+                  <Pencil className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Delete ${product.name}`}
+                onClick={() => onDelete(product._id)}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          );
+        },
+      });
+    }
+
+    return cols;
+  }, [isEmployee, onDelete]);
+
+  return (
+    <DataTable
+      columns={columns}
+      data={products}
+      isLoading={isLoading}
+      skeletonRows={6}
+      enableSearch
+      searchPlaceholder="Search products by name or SKU…"
+      searchValue={search}
+      onSearchChange={onSearchChange}
+      extraToolbar={extraToolbar}
+      pagination={{
+        currentPage: meta?.page ?? 1,
+        totalCount: meta?.total ?? 0,
+        rowsPerPage: meta?.limit ?? 10,
+        pageSizeOptions: [10, 20, 50, 100],
+        onPageChange,
+        onRowsPerPageChange,
+      }}
+      bulkActions={{
+        render: (rows, disabled) => (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 bg-background border-border/60 shadow-sm"
+              disabled={disabled}
+              onClick={() =>
+                popup.success(`Exporting ${rows.length} products…`)
+              }
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              Export
+            </Button>
+            {!isEmployee && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-8 shadow-sm"
+                disabled={disabled}
+                onClick={() => popup.error(`Deleted ${rows.length} products`)}
+              >
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                Delete
+              </Button>
+            )}
+          </>
+        ),
+      }}
+      emptyTitle="No products found"
+      emptyDescription="Try adjusting your filters or search query."
+    />
   );
 });

@@ -233,17 +233,19 @@ export default function DashboardPage() {
       </motion.div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 min-w-0">
           <RevenueChart data={stats?.dailyRevenue ?? []} />
         </div>
-        <LowStockListComponent products={stats?.lowStockProducts ?? []} />
+        <div className="min-w-0">
+          <LowStockListComponent products={stats?.lowStockProducts ?? []} />
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-1 rounded-xl border bg-card shadow-sm p-6 h-full min-h-[420px]">
+        <div className="lg:col-span-1 rounded-xl border bg-card shadow-sm p-6 h-full min-h-[420px] min-w-0">
           <CategoryChart data={stats?.categoryRevenue ?? []} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 min-w-0">
           <RecentSales sales={stats?.recentSales ?? []} />
         </div>
       </div>

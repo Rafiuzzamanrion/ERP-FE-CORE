@@ -12,6 +12,7 @@ import {
 import ProductTable from "../components/ProductTable";
 import NoDataFound from "@/components/shared/NoDataFound";
 import ProductListSkeleton from "@/components/shared/ProductListSkeleton";
+import { useDebounce } from "@/hooks/useDebounce";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -76,14 +77,13 @@ export default function ProductListPage() {
     [searchParams, router]
   );
 
+  const debouncedSearch = useDebounce(searchInput, 400);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchInput !== search) {
-        updateParams({ search: searchInput });
-      }
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [searchInput, search, updateParams]);
+    if (debouncedSearch !== search) {
+      updateParams({ search: debouncedSearch });
+    }
+  }, [debouncedSearch, search, updateParams]);
 
   const handleCategoryChange = (value: string) => {
     updateParams({ category: value === "all" ? "" : value });
@@ -140,44 +140,6 @@ export default function ProductListPage() {
         </NavTabItem>
       </NavTabs>
 
-      <Card className="border-none shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <SlidersHorizontal className="h-4 w-4 text-muted-foreground hidden sm:block" />
-              <Select
-                value={category || "all"}
-                onValueChange={handleCategoryChange}
-              >
-                <SelectTrigger className="w-44">
-                  <SelectValue placeholder="All categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat._id} value={cat.name}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {isFetching && !isLoading && (
-                <RotateCw className="h-4 w-4 animate-spin self-center text-muted-foreground" />
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {isFirstLoad ? (
         <ProductListSkeleton />
       ) : isError ? (
@@ -194,34 +156,39 @@ export default function ProductListPage() {
             </Button>
           }
         />
-      ) : data && data.data.length === 0 ? (
-        <NoDataFound
-          title={
-            search || category
-              ? "No products match your filters"
-              : "No products found"
-          }
-          description={
-            search || category
-              ? "Try adjusting your search or category filter."
-              : "Get started by adding your first product to the inventory."
-          }
-          action={
-            !isEmployee && !search && !category ? (
-              <Button onClick={() => setAddDialogOpen(true)}>
-                <Plus className="h-4 w-4" />
-                Add Product
-              </Button>
-            ) : undefined
-          }
-          variant={search || category ? "search" : "empty"}
-        />
       ) : (
         <ProductTable
           products={data?.data ?? []}
           meta={data?.meta}
+          isLoading={isFetching}
+          search={searchInput}
+          onSearchChange={setSearchInput}
           onPageChange={handlePageChange}
+          onRowsPerPageChange={(limit) =>
+            updateParams({ limit: String(limit), page: "1" })
+          }
           onDelete={handleDelete}
+          extraToolbar={
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 text-muted-foreground hidden sm:block" />
+              <Select
+                value={category || "all"}
+                onValueChange={handleCategoryChange}
+              >
+                <SelectTrigger className="h-9 w-40 bg-card border-border/60">
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All categories</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat._id} value={cat.name}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          }
         />
       )}
 

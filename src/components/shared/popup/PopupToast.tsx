@@ -63,7 +63,7 @@ export const PopupToast = memo(function PopupToast({
       role="alert"
       aria-live="assertive"
       className={cn(
-        "pointer-events-auto flex w-full max-w-[400px] items-center gap-3.5 rounded-[18px] border px-4 py-3.5 shadow-sm transition-all duration-300",
+        "pointer-events-auto flex w-max min-w-[300px] max-w-[400px] items-center gap-3.5 rounded-[18px] border px-4 py-3.5 shadow-sm transition-all duration-300",
         config.bgClass,
         config.borderClass,
         visible

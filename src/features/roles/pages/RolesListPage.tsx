@@ -1,19 +1,10 @@
-import { useState, useEffect } from "react";
-import { RotateCw, ShieldPlus, Trash2, Pencil, Search } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { RotateCw, ShieldPlus, Trash2, Pencil, Download } from "lucide-react";
 import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +21,17 @@ import {
 } from "../api/roleApi";
 import PageHeader from "@/components/shared/PageHeader";
 import NoDataFound from "@/components/shared/NoDataFound";
-import RolesListSkeleton from "../components/RolesListSkeleton";
+import { DataTable } from "@/components/shared/DataTable";
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useDebounce } from "@/hooks/useDebounce";
+
+type Role = {
+  _id: string;
+  name: string;
+  permissions: { _id?: string; key: string }[];
+  isSystem: boolean;
+};
 
 export default function RolesListPage() {
   const { data: roles, isLoading, isError, refetch } = useGetRolesQuery();
@@ -39,20 +40,16 @@ export default function RolesListPage() {
   const [deleteRole] = useDeleteRoleMutation();
 
   const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debouncedSearch = useDebounce(searchInput, 400);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchInput), 400);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  const filteredRoles = roles?.filter(
-    (role) =>
-      role.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      role.permissions.some((p) =>
-        p.key.toLowerCase().includes(debouncedSearch.toLowerCase())
-      )
-  );
+  const filteredRoles =
+    roles?.filter(
+      (role) =>
+        role.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        role.permissions.some((p) =>
+          p.key.toLowerCase().includes(debouncedSearch.toLowerCase())
+        )
+    ) ?? [];
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -108,6 +105,130 @@ export default function RolesListPage() {
     }
   };
 
+  const columns: ColumnDef<Role>[] = useMemo(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+            className="translate-y-[2px]"
+          />
+        ),
+        cell: ({ row }) => {
+          if (row.original.isSystem) {
+            return <Checkbox disabled className="translate-y-[2px]" />;
+          }
+          return (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Select row"
+              className="translate-y-[2px]"
+            />
+          );
+        },
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => (
+          <div className="font-medium capitalize">{row.getValue("name")}</div>
+        ),
+      },
+      {
+        accessorKey: "permissions",
+        header: "Permissions",
+        cell: ({ row }) => {
+          const role = row.original;
+          return (
+            <div className="flex flex-wrap gap-1.5">
+              {role.permissions && role.permissions.length > 0 ? (
+                role.permissions.slice(0, 5).map((perm) => (
+                  <Badge
+                    key={perm._id ?? perm.key}
+                    variant="outline"
+                    className="text-[10px] uppercase font-semibold"
+                  >
+                    {perm.key.replace(/:/g, " ")}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  No permissions
+                </span>
+              )}
+              {role.permissions && role.permissions.length > 5 && (
+                <Badge variant="secondary" className="text-[10px]">
+                  +{role.permissions.length - 5}
+                </Badge>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "isSystem",
+        header: () => <div className="text-center">System</div>,
+        cell: ({ row }) => {
+          const isSystem = row.getValue("isSystem");
+          return (
+            <div className="flex justify-center">
+              <Badge
+                variant={isSystem ? "secondary" : "default"}
+                className="shadow-sm"
+              >
+                {isSystem ? "System" : "Custom"}
+              </Badge>
+            </div>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => {
+          const role = row.original;
+          if (role.isSystem) return null;
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Edit ${role.name}`}
+                onClick={() => {
+                  setEditId({ _id: role._id, name: role.name });
+                  setEditFormName(role.name);
+                  setIsEditOpen(true);
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Delete ${role.name}`}
+                onClick={() => setDeleteId(role._id)}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    []
+  );
+
   return (
     <div>
       <PageHeader
@@ -120,28 +241,12 @@ export default function RolesListPage() {
             setIsCreateOpen(true);
           }}
         >
-          <ShieldPlus className="h-4 w-4" />
+          <ShieldPlus className="h-4 w-4 mr-1.5" />
           Add Role
         </Button>
       </PageHeader>
 
-      <Card className="mb-6 border-none shadow-sm">
-        <CardContent className="p-4">
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search roles or permissions..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {isLoading ? (
-        <RolesListSkeleton />
-      ) : isError ? (
+      {isError ? (
         <NoDataFound
           title="Failed to load roles"
           action={
@@ -151,106 +256,63 @@ export default function RolesListPage() {
             </Button>
           }
         />
-      ) : !filteredRoles || filteredRoles.length === 0 ? (
-        <NoDataFound
-          title={
-            debouncedSearch ? "No roles match your search" : "No roles found"
+      ) : (
+        <DataTable
+          columns={columns}
+          data={filteredRoles}
+          isLoading={isLoading}
+          skeletonRows={4}
+          enableSearch
+          searchPlaceholder="Search roles or permissions..."
+          searchValue={searchInput}
+          onSearchChange={setSearchInput}
+          pagination={{
+            currentPage: 1,
+            totalCount: filteredRoles.length,
+            rowsPerPage: Math.max(filteredRoles.length, 10), // ensures 1 page so pagination is hidden
+            pageSizeOptions: [10, 20, 50],
+            onPageChange: () => {},
+            onRowsPerPageChange: () => {},
+          }}
+          bulkActions={{
+            render: (rows, disabled) => (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 bg-background shadow-sm border-border/60"
+                  disabled={disabled}
+                  onClick={() =>
+                    popup.success(`Exporting ${rows.length} roles…`)
+                  }
+                >
+                  <Download className="mr-1.5 h-3.5 w-3.5" />
+                  Export
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 shadow-sm"
+                  disabled={disabled}
+                  onClick={() =>
+                    popup.error(`Deleted ${rows.length} custom roles`)
+                  }
+                >
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                  Delete
+                </Button>
+              </>
+            ),
+          }}
+          emptyTitle={
+            searchInput ? "No roles match your search" : "No roles found"
           }
-          description={
-            debouncedSearch
+          emptyDescription={
+            searchInput
               ? "Try a different search term."
               : "Get started by adding your first role."
           }
-          action={
-            !debouncedSearch ? (
-              <Button
-                onClick={() => {
-                  setFormName("");
-                  setIsCreateOpen(true);
-                }}
-              >
-                <ShieldPlus className="h-4 w-4" />
-                Add Role
-              </Button>
-            ) : undefined
-          }
-          variant={debouncedSearch ? "search" : "empty"}
         />
-      ) : (
-        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Permissions</TableHead>
-                <TableHead className="text-center">System</TableHead>
-                <TableHead className="w-24 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRoles.map((role) => (
-                <TableRow key={role._id}>
-                  <TableCell className="font-medium">{role.name}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1.5">
-                      {role.permissions && role.permissions.length > 0 ? (
-                        role.permissions.slice(0, 5).map((perm) => (
-                          <Badge
-                            key={perm._id ?? perm.key}
-                            variant="outline"
-                            className="text-xs capitalize"
-                          >
-                            {perm.key.replace(/:/g, " ")}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          No permissions
-                        </span>
-                      )}
-                      {role.permissions && role.permissions.length > 5 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{role.permissions.length - 5}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant={role.isSystem ? "secondary" : "default"}>
-                      {role.isSystem ? "System" : "Custom"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {!role.isSystem && (
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Edit ${role.name}`}
-                          onClick={() => {
-                            setEditId({ _id: role._id, name: role.name });
-                            setEditFormName(role.name);
-                            setIsEditOpen(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Delete ${role.name}`}
-                          onClick={() => setDeleteId(role._id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
       )}
 
       {/* Create Dialog */}

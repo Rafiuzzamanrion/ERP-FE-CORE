@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface SearchInputProps {
   onSearch: (value: string) => void;
@@ -14,13 +15,11 @@ export function SearchInput({
   debounceMs = 300,
 }: SearchInputProps) {
   const [value, setValue] = useState("");
+  const debouncedValue = useDebounce(value, debounceMs);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onSearch(value);
-    }, debounceMs);
-    return () => clearTimeout(timer);
-  }, [value, debounceMs, onSearch]);
+    onSearch(debouncedValue);
+  }, [debouncedValue, onSearch]);
 
   return (
     <div className="relative">

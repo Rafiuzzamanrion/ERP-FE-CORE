@@ -1,19 +1,11 @@
-import { useState, useEffect } from "react";
-import { RotateCw, Trash2, UserPlus, Search } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { RotateCw, Trash2, UserPlus, Download } from "lucide-react";
 import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
   Select,
   SelectContent,
@@ -37,25 +30,66 @@ import {
 } from "../api/userApi";
 import PageHeader from "@/components/shared/PageHeader";
 import NoDataFound from "@/components/shared/NoDataFound";
-import UsersListSkeleton from "../components/UsersListSkeleton";
+import { DataTable } from "@/components/shared/DataTable";
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+
+type User = {
+  _id: string;
+  name: string;
+  email: string;
+  role: string | null;
+  isActive: boolean;
+};
 
 export default function UsersListPage() {
-  const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const search = searchParams.get("search") ?? "";
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = Number(searchParams.get("limit")) || 10;
+
+  const [searchInput, setSearchInput] = useState(search);
+  const debouncedSearch = useDebounce(searchInput, 400);
+
+  const updateParams = useCallback(
+    (updates: Record<string, string>) => {
+      const next = new URLSearchParams(searchParams);
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value) {
+          next.set(key, value);
+        } else {
+          next.delete(key);
+        }
+      });
+      if (updates.search !== undefined) {
+        next.delete("page");
+      }
+      router.replace(`/users?${next.toString()}`);
+    },
+    [searchParams, router]
+  );
+
+  useEffect(() => {
+    if (debouncedSearch !== search) {
+      updateParams({ search: debouncedSearch });
+    }
+  }, [debouncedSearch, search, updateParams]);
+
   const {
-    data: users,
+    data: users = [],
     isLoading,
+    isFetching,
     isError,
     refetch,
   } = useGetUsersQuery(debouncedSearch);
+
+  const meta = undefined;
+
   const [createUser] = useCreateUserMutation();
   const [updateUser] = useUpdateUserMutation();
   const [deleteUser] = useDeleteUserMutation();
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchInput), 400);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<{
@@ -131,18 +165,125 @@ export default function UsersListPage() {
     }
   };
 
-  const openEdit = (user: {
-    _id: string;
-    name: string;
-    email: string;
-    role: string | null;
-  }) => {
-    setEditUser(user);
+  const openEdit = (user: User) => {
+    setEditUser({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
     setFormName(user.name);
     setFormEmail(user.email);
     setFormPassword("");
     setFormRole(typeof user.role === "string" ? user.role : "employee");
   };
+
+  const columns: ColumnDef<User>[] = useMemo(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+            className="translate-y-[2px]"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => (
+          <div className="font-medium text-foreground">
+            {row.getValue("name")}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "email",
+        header: "Email",
+      },
+      {
+        accessorKey: "role",
+        header: "Role",
+        cell: ({ row }) => (
+          <Badge variant="secondary" className="capitalize">
+            {row.getValue("role") ?? "-"}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "isActive",
+        header: () => <div className="text-center">Status</div>,
+        cell: ({ row }) => {
+          const isActive = row.getValue("isActive");
+          return (
+            <div className="flex justify-center">
+              <Badge variant={isActive ? "success" : "destructive"}>
+                {isActive ? "Active" : "Inactive"}
+              </Badge>
+            </div>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => {
+          const user = row.original;
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Edit ${user.name}`}
+                onClick={() => openEdit(user)}
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Delete ${user.name}`}
+                onClick={() => setDeleteId(user._id)}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    []
+  );
 
   return (
     <div>
@@ -158,23 +299,7 @@ export default function UsersListPage() {
         </Button>
       </PageHeader>
 
-      <Card className="mb-6 border-none shadow-sm">
-        <CardContent className="p-4">
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search users by name or email..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {isLoading ? (
-        <UsersListSkeleton />
-      ) : isError ? (
+      {isError ? (
         <NoDataFound
           title="Failed to load users"
           action={
@@ -184,98 +309,64 @@ export default function UsersListPage() {
             </Button>
           }
         />
-      ) : !users || users.length === 0 ? (
-        <NoDataFound
-          title={searchInput ? "No users match your search" : "No users found"}
-          description={
+      ) : (
+        <DataTable
+          columns={columns}
+          data={users}
+          isLoading={isLoading || isFetching}
+          skeletonRows={5}
+          enableSearch
+          searchPlaceholder="Search users by name or email..."
+          searchValue={searchInput}
+          onSearchChange={(val) => {
+            setSearchInput(val);
+          }}
+          pagination={{
+            currentPage: 1,
+            totalCount: users.length,
+            rowsPerPage: Math.max(users.length, 10),
+            pageSizeOptions: [10, 20, 50],
+            onPageChange: (newPage) => updateParams({ page: String(newPage) }),
+            onRowsPerPageChange: (newLimit) =>
+              updateParams({ limit: String(newLimit), page: "1" }),
+          }}
+          bulkActions={{
+            render: (rows, disabled) => (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 bg-background shadow-sm border-border/60"
+                  disabled={disabled}
+                  onClick={() =>
+                    popup.success(`Exporting ${rows.length} users…`)
+                  }
+                >
+                  <Download className="mr-1.5 h-3.5 w-3.5" />
+                  Export
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-8 shadow-sm"
+                  disabled={disabled}
+                  onClick={() => popup.error(`Deleted ${rows.length} users`)}
+                >
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                  Delete
+                </Button>
+              </>
+            ),
+          }}
+          emptyTitle={
+            searchInput ? "No users match your search" : "No users found"
+          }
+          emptyDescription={
             searchInput
               ? "Try a different search term."
               : "Get started by adding your first user."
           }
-          action={
-            !searchInput ? (
-              <Button
-                onClick={() => {
-                  resetForm();
-                  setIsCreateOpen(true);
-                }}
-              >
-                <UserPlus className="h-4 w-4" />
-                Add User
-              </Button>
-            ) : undefined
-          }
-          variant={searchInput ? "search" : "empty"}
         />
-      ) : (
-        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead className="text-center">Active</TableHead>
-                <TableHead className="w-24 text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((u) => (
-                <TableRow key={u._id}>
-                  <TableCell className="font-medium">{u.name}</TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{u.role ?? "-"}</Badge>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant={u.isActive ? "success" : "destructive"}>
-                      {u.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Edit ${u.name}`}
-                        onClick={() => {
-                          openEdit({
-                            _id: u._id,
-                            name: u.name,
-                            email: u.email,
-                            role: u.role ?? null,
-                          });
-                        }}
-                      >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Delete ${u.name}`}
-                        onClick={() => setDeleteId(u._id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
       )}
 
       {/* Create Dialog */}
