@@ -17,26 +17,26 @@ const variantConfig: Record<
   success: {
     icon: CheckCircle2,
     iconBgClass: "bg-[#22c55e]",
-    bgClass: "bg-[#f0fdf4] dark:bg-[#22c55e]/10",
-    borderClass: "border-[#bbf7d0]/60 dark:border-[#22c55e]/20",
+    bgClass: "bg-[#f0fdf4] dark:bg-[#022c22]",
+    borderClass: "border-[#bbf7d0]/60 dark:border-[#064e3b]",
   },
   error: {
     icon: XCircle,
     iconBgClass: "bg-[#ef4444]",
-    bgClass: "bg-[#fef2f2] dark:bg-[#ef4444]/10",
-    borderClass: "border-[#fecaca]/60 dark:border-[#ef4444]/20",
+    bgClass: "bg-[#fef2f2] dark:bg-[#450a0a]",
+    borderClass: "border-[#fecaca]/60 dark:border-[#7f1d1d]",
   },
   warning: {
     icon: AlertCircle,
     iconBgClass: "bg-[#f59e0b]",
-    bgClass: "bg-[#fffbeb] dark:bg-[#f59e0b]/10",
-    borderClass: "border-[#fde68a]/60 dark:border-[#f59e0b]/20",
+    bgClass: "bg-[#fffbeb] dark:bg-[#451a03]",
+    borderClass: "border-[#fde68a]/60 dark:border-[#78350f]",
   },
   info: {
     icon: Info,
     iconBgClass: "bg-[#3b82f6]",
-    bgClass: "bg-[#eff6ff] dark:bg-[#3b82f6]/10",
-    borderClass: "border-[#bfdbfe]/60 dark:border-[#3b82f6]/20",
+    bgClass: "bg-[#eff6ff] dark:bg-[#172554]",
+    borderClass: "border-[#bfdbfe]/60 dark:border-[#1e3a8a]",
   },
 };
 
