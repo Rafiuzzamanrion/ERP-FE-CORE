@@ -17,7 +17,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
 
     if (user) {
-      const userRole = user.role.toLowerCase();
+      const userRole = user.role.toLowerCase().trim();
 
       // Define route protection rules
       const routeRoles: Record<string, string[]> = {

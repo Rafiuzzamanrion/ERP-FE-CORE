@@ -138,51 +138,6 @@ export default function ProductListPage() {
         <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
           Inventory Status
         </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
-        <NavTabItem href="/products/inventory" icon={<Warehouse size={16} />}>
-          Inventory Status
-        </NavTabItem>
       </NavTabs>
 
       <Card className="border-none shadow-sm">
