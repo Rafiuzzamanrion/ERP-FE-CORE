@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -7,19 +7,33 @@ interface SearchInputProps {
   onSearch: (value: string) => void;
   placeholder?: string;
   debounceMs?: number;
+  initialValue?: string;
 }
 
 export function SearchInput({
   onSearch,
   placeholder = "Search...",
   debounceMs = 300,
+  initialValue = "",
 }: SearchInputProps) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(initialValue);
   const debouncedValue = useDebounce(value, debounceMs);
 
+  const onSearchRef = useRef(onSearch);
   useEffect(() => {
-    onSearch(debouncedValue);
-  }, [debouncedValue, onSearch]);
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
+  // Only trigger onSearch if the debouncedValue actually differs from initialValue
+  // or after the user has typed something.
+  const isFirstMount = useRef(true);
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    onSearchRef.current(debouncedValue);
+  }, [debouncedValue]);
 
   return (
     <div className="relative">

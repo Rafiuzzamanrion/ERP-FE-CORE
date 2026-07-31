@@ -229,6 +229,7 @@ export function DataTable<TData, TValue>({
             <div className="flex-1 min-w-0">
               <SearchInput
                 key={tableId}
+                initialValue={searchValue}
                 placeholder={searchPlaceholder}
                 onSearch={(val) => {
                   onPageChange(1);
