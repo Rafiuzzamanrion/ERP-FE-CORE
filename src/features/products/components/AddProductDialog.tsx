@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+import { popup } from "@/components/shared/popup";
 import { useCreateProductMutation } from "../api/productApi";
 import ProductForm from "../components/ProductForm";
 import {
@@ -26,14 +26,14 @@ export function AddProductDialog({
   const handleSubmit = async (formData: FormData) => {
     try {
       await createProduct(formData).unwrap();
-      toast.success("Product created successfully");
+      popup.success("Product created successfully");
       onOpenChange(false);
       onSuccess?.();
     } catch (err) {
       const message =
         (err as { data?: { message?: string } })?.data?.message ??
         "Failed to create product";
-      toast.error(message);
+      popup.error(message);
     }
   };
 

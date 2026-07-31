@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { RotateCw, Trash2, UserPlus, Search } from "lucide-react";
-import { toast } from "sonner";
+import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,11 +89,11 @@ export default function UsersListPage() {
         password: formPassword,
         role: formRole,
       }).unwrap();
-      toast.success("User created");
+      popup.success("User created");
       setIsCreateOpen(false);
       resetForm();
     } catch {
-      toast.error("Failed to create user");
+      popup.error("Failed to create user");
     } finally {
       setIsSubmitting(false);
     }
@@ -109,11 +109,11 @@ export default function UsersListPage() {
       if (formPassword) data.password = formPassword;
       if (formRole) data.role = formRole;
       await updateUser({ id: editUser._id, ...data }).unwrap();
-      toast.success("User updated");
+      popup.success("User updated");
       setEditUser(null);
       resetForm();
     } catch {
-      toast.error("Failed to update user");
+      popup.error("Failed to update user");
     } finally {
       setIsSubmitting(false);
     }
@@ -123,9 +123,9 @@ export default function UsersListPage() {
     if (!deleteId) return;
     try {
       await deleteUser(deleteId).unwrap();
-      toast.success("User deleted");
+      popup.success("User deleted");
     } catch {
-      toast.error("Failed to delete user");
+      popup.error("Failed to delete user");
     } finally {
       setDeleteId(null);
     }

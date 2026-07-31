@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { RotateCw, ShieldPlus, Trash2, Pencil, Search } from "lucide-react";
-import { toast } from "sonner";
+import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,11 +70,11 @@ export default function RolesListPage() {
     setIsSubmitting(true);
     try {
       await createRole({ name: formName }).unwrap();
-      toast.success("Role created");
+      popup.success("Role created");
       setIsCreateOpen(false);
       setFormName("");
     } catch {
-      toast.error("Failed to create role");
+      popup.error("Failed to create role");
     } finally {
       setIsSubmitting(false);
     }
@@ -85,12 +85,12 @@ export default function RolesListPage() {
     setIsEditSubmitting(true);
     try {
       await updateRole({ id: editId._id, name: editFormName }).unwrap();
-      toast.success("Role updated");
+      popup.success("Role updated");
       setIsEditOpen(false);
       setEditId(null);
       setEditFormName("");
     } catch {
-      toast.error("Failed to update role");
+      popup.error("Failed to update role");
     } finally {
       setIsEditSubmitting(false);
     }
@@ -100,9 +100,9 @@ export default function RolesListPage() {
     if (!deleteId) return;
     try {
       await deleteRole(deleteId).unwrap();
-      toast.success("Role deleted");
+      popup.success("Role deleted");
     } catch {
-      toast.error("Failed to delete role");
+      popup.error("Failed to delete role");
     } finally {
       setDeleteId(null);
     }

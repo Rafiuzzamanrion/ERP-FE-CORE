@@ -8,7 +8,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { io as socketIO } from "socket.io-client";
-import { toast } from "sonner";
+import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { apiSlice } from "@/store/baseApi";
@@ -50,16 +50,16 @@ export default function DashboardPage() {
       for (const id of newIds) {
         const product = result.data.lowStockProducts.find((p) => p._id === id);
         if (product) {
-          toast.warning(
-            `${product.name} is running low on stock (${product.stockQuantity} remaining)`
-          );
+          popup.warning("Low Stock Alert", {
+            description: `${product.name} is running low on stock (${product.stockQuantity} remaining)`,
+          });
           dispatch(apiSlice.util.invalidateTags(["Dashboard"]));
         }
       }
 
       prevLowStockRef.current = currentIds;
     } catch {
-      toast.error("Failed to fetch low stock alerts");
+      popup.error("Error", { description: "Failed to fetch low stock alerts" });
     }
   }, [fetchLowStockAlerts, dispatch]);
 
@@ -99,7 +99,7 @@ export default function DashboardPage() {
       const message = data
         ? `${data.name} is running low on stock (${data.stockQuantity} remaining)`
         : "A product is running low on stock";
-      toast.warning(message);
+      popup.warning("Stock Alert", { description: message });
       dispatch(apiSlice.util.invalidateTags(["Dashboard"]));
     });
 

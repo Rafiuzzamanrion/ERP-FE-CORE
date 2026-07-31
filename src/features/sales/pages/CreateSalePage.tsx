@@ -2,7 +2,7 @@ import { useRouter } from "next/navigation";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
+import { popup } from "@/components/shared/popup";
 import {
   Card,
   CardContent,
@@ -84,14 +84,14 @@ export default function CreateSalePage() {
           quantity: item.quantity,
         })),
       }).unwrap();
-      toast.success("Sale created successfully");
+      popup.success("Sale created successfully");
       router.push("/sales");
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "data" in err
           ? (err as { data?: { message?: string } }).data?.message
           : "Failed to create sale";
-      toast.error(message || "Failed to create sale");
+      popup.error(message || "Failed to create sale");
     }
   };
 

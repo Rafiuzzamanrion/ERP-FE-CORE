@@ -5,7 +5,7 @@ import { z } from "zod";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,14 +50,14 @@ export default memo(function LoginForm() {
           user: response.data.user,
         })
       );
-      toast.success("Login successful");
+      popup.success("Login successful");
       router.push("/");
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "data" in err
           ? (err as { data: { message: string } }).data?.message
           : "Login failed";
-      toast.error(message || "Login failed");
+      popup.error(message || "Login failed");
     }
   };
 

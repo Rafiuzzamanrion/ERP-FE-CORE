@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Plus, RotateCw, Search, SlidersHorizontal } from "lucide-react";
-import { toast } from "sonner";
+import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppSelector } from "@/store/hooks";
@@ -101,9 +101,9 @@ export default function ProductListPage() {
     if (!deleteId) return;
     try {
       await deleteProduct(deleteId).unwrap();
-      toast.success("Product deleted successfully");
+      popup.success("Product deleted successfully");
     } catch {
-      toast.error("Failed to delete product");
+      popup.error("Failed to delete product");
     } finally {
       setDeleteId(null);
     }

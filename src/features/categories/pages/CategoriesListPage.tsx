@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { RotateCw, Tag, Trash2, Search, Pencil } from "lucide-react";
-import { toast } from "sonner";
+import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -118,11 +118,11 @@ export default function CategoriesListPage() {
         name: formName,
         description: formDescription,
       }).unwrap();
-      toast.success("Category created");
+      popup.success("Category created");
       setIsCreateOpen(false);
       resetForm();
     } catch {
-      toast.error("Failed to create category");
+      popup.error("Failed to create category");
     } finally {
       setIsSubmitting(false);
     }
@@ -136,11 +136,11 @@ export default function CategoriesListPage() {
       if (formName) data.name = formName;
       if (formDescription) data.description = formDescription;
       await updateCategory({ id: editCategory._id, ...data }).unwrap();
-      toast.success("Category updated");
+      popup.success("Category updated");
       setEditCategory(null);
       resetForm();
     } catch {
-      toast.error("Failed to update category");
+      popup.error("Failed to update category");
     } finally {
       setIsSubmitting(false);
     }
@@ -150,7 +150,7 @@ export default function CategoriesListPage() {
     if (!deleteId) return;
     try {
       await deleteCategory(deleteId).unwrap();
-      toast.success("Category deleted");
+      popup.success("Category deleted");
     } catch (err: unknown) {
       const message =
         err &&
@@ -161,7 +161,7 @@ export default function CategoriesListPage() {
         "message" in err.data
           ? String(err.data.message)
           : "Failed to delete category";
-      toast.error(message);
+      popup.error(message);
     } finally {
       setDeleteId(null);
     }

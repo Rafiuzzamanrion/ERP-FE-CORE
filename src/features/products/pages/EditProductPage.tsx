@@ -1,5 +1,5 @@
 import { useParams, useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,13 +32,13 @@ export default function EditProductPage() {
     if (!id) return;
     try {
       await updateProduct({ id, body: formData }).unwrap();
-      toast.success("Product updated successfully");
+      popup.success("Product updated successfully");
       router.push("/products");
     } catch (err) {
       const message =
         (err as { data?: { message?: string } })?.data?.message ??
         "Failed to update product";
-      toast.error(message);
+      popup.error(message);
     }
   };
 

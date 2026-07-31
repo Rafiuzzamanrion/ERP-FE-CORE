@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { Provider } from "react-redux";
-import { Toaster } from "sonner";
+import { PopupProvider } from "@/components/shared/popup";
 import { store } from "@/store";
 import ErrorBoundary from "@/components/shared/ErrorBoundary";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -46,7 +46,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <SessionHydrator>
           <DynamicThemeProvider>{children}</DynamicThemeProvider>
         </SessionHydrator>
-        <Toaster richColors position="top-right" />
+        <PopupProvider />
       </ErrorBoundary>
     </Provider>
   );
