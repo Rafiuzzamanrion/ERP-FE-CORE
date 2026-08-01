@@ -274,36 +274,22 @@ export default function RolesListPage() {
             onPageChange: () => {},
             onRowsPerPageChange: () => {},
           }}
-          bulkActions={{
-            render: (rows, disabled) => (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 bg-background shadow-sm border-border/60"
-                  disabled={disabled}
-                  onClick={() =>
-                    popup.success(`Exporting ${rows.length} roles…`)
-                  }
-                >
-                  <Download className="mr-1.5 h-3.5 w-3.5" />
-                  Export
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="h-8 shadow-sm"
-                  disabled={disabled}
-                  onClick={() =>
-                    popup.error(`Deleted ${rows.length} custom roles`)
-                  }
-                >
-                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                  Delete
-                </Button>
-              </>
-            ),
-          }}
+          bulkActions={[
+            {
+              label: "Export selected",
+              icon: <Download className="h-3.5 w-3.5" />,
+              variant: "outline",
+              onClick: (rows) =>
+                popup.success(`Exporting ${rows.length} roles…`),
+            },
+            {
+              label: "Delete selected",
+              icon: <Trash2 className="h-3.5 w-3.5" />,
+              variant: "destructive",
+              onClick: (rows) =>
+                popup.error(`Deleted ${rows.length} custom roles`),
+            },
+          ]}
           emptyTitle={
             searchInput ? "No roles match your search" : "No roles found"
           }

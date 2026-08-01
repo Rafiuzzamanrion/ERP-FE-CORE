@@ -286,36 +286,22 @@ export default function CategoriesListPage() {
             onPageChange: handlePageChange,
             onRowsPerPageChange: handleRowsPerPageChange,
           }}
-          bulkActions={{
-            render: (rows, disabled) => (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 bg-background shadow-sm border-border/60"
-                  disabled={disabled}
-                  onClick={() =>
-                    popup.success(`Exporting ${rows.length} categories…`)
-                  }
-                >
-                  <Download className="mr-1.5 h-3.5 w-3.5" />
-                  Export
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="h-8 shadow-sm"
-                  disabled={disabled}
-                  onClick={() =>
-                    popup.error(`Deleted ${rows.length} categories`)
-                  }
-                >
-                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                  Delete
-                </Button>
-              </>
-            ),
-          }}
+          bulkActions={[
+            {
+              label: "Export selected",
+              icon: <Download className="h-3.5 w-3.5" />,
+              variant: "outline",
+              onClick: (rows) =>
+                popup.success(`Exporting ${rows.length} categories…`),
+            },
+            {
+              label: "Delete selected",
+              icon: <Trash2 className="h-3.5 w-3.5" />,
+              variant: "destructive",
+              onClick: (rows) =>
+                popup.error(`Deleted ${rows.length} categories`),
+            },
+          ]}
           emptyTitle={
             search ? "No categories match your search" : "No categories found"
           }

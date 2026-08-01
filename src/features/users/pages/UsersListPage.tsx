@@ -330,34 +330,21 @@ export default function UsersListPage() {
             onRowsPerPageChange: (newLimit) =>
               updateParams({ limit: String(newLimit), page: "1" }),
           }}
-          bulkActions={{
-            render: (rows, disabled) => (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 bg-background shadow-sm border-border/60"
-                  disabled={disabled}
-                  onClick={() =>
-                    popup.success(`Exporting ${rows.length} users…`)
-                  }
-                >
-                  <Download className="mr-1.5 h-3.5 w-3.5" />
-                  Export
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="h-8 shadow-sm"
-                  disabled={disabled}
-                  onClick={() => popup.error(`Deleted ${rows.length} users`)}
-                >
-                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                  Delete
-                </Button>
-              </>
-            ),
-          }}
+          bulkActions={[
+            {
+              label: "Export selected",
+              icon: <Download className="h-3.5 w-3.5" />,
+              variant: "outline",
+              onClick: (rows) =>
+                popup.success(`Exporting ${rows.length} users…`),
+            },
+            {
+              label: "Delete selected",
+              icon: <Trash2 className="h-3.5 w-3.5" />,
+              variant: "destructive",
+              onClick: (rows) => popup.error(`Deleted ${rows.length} users`),
+            },
+          ]}
           emptyTitle={
             searchInput ? "No users match your search" : "No users found"
           }

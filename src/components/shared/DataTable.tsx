@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useId, useState } from "react";
+import { ReactNode, useId, useState, useCallback, useRef } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -10,6 +10,7 @@ import {
   useReactTable,
   RowSelectionState,
   OnChangeFn,
+  VisibilityState,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -28,89 +29,109 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { NoDataFound } from "@/components/shared/NoDataFound";
+import { Card } from "@/components/ui/card";
 import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  Columns3,
+  RefreshCw,
+  AlignJustify,
+  AlignCenter,
+  AlignLeft,
+  Download,
+  CheckSquare,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
-// Types
+// Public Types
 // ---------------------------------------------------------------------------
 
+export type ButtonVariant =
+  "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+
+export type TableDensity = "compact" | "default" | "comfortable";
+
+export interface BulkAction<TData> {
+  label: string;
+  icon: ReactNode;
+  variant?: ButtonVariant;
+  onClick: (selectedRows: TData[]) => void;
+  hidden?: (selectedRows: TData[]) => boolean;
+}
+
+export interface RowAction<TData> {
+  label: string;
+  icon?: ReactNode;
+  variant?: ButtonVariant;
+  onClick: (row: TData) => void;
+  hidden?: (row: TData) => boolean;
+}
+
 interface ServerPaginationProps {
-  /** 1-based current page */
   currentPage: number;
-  /** Total number of rows across ALL pages (from the API response) */
   totalCount: number;
-  /** How many rows per page */
   rowsPerPage: number;
-  /** Available page-size choices */
   pageSizeOptions?: number[];
   onPageChange: (page: number) => void;
   onRowsPerPageChange: (size: number) => void;
 }
 
-interface BulkActionConfig<TData> {
-  /**
-   * Render the action button(s). They receive the array of selected rows
-   * AND a boolean `disabled` flag — use it to disable the button when
-   * nothing is selected (the toolbar is always visible).
-   */
-  render: (selectedRows: TData[], disabled: boolean) => ReactNode;
-}
-
-interface DataTableProps<TData, TValue> {
+export interface DataTableProps<TData, TValue = unknown> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-
-  // Server-side pagination — required for backend-driven tables
   pagination: ServerPaginationProps;
-
-  // Optional server-side search — all debouncing / API calls are in the parent
   enableSearch?: boolean;
   searchPlaceholder?: string;
-  /** Controlled search value (parent owns state) */
   searchValue?: string;
-  /** Called with the debounced string; parent resets page to 1 + re-fetches */
   onSearchChange?: (value: string) => void;
-
-  // Optional sorting (server-side) — parent owns state
   sorting?: SortingState;
   onSortingChange?: OnChangeFn<SortingState>;
-
-  // Row selection — parent owns state so it can act on selections
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
-  /**
-   * Always-visible bulk action toolbar config.
-   * Buttons are disabled when no rows are selected.
-   */
-  bulkActions?: BulkActionConfig<TData>;
-
-  // Loading / empty states
+  bulkActions?: BulkAction<TData>[];
+  rowActions?: RowAction<TData>[];
+  onRowClick?: (row: TData) => void;
   isLoading?: boolean;
-  /** Number of skeleton rows to show while loading */
   skeletonRows?: number;
-
-  /** Optional extra content to render in the toolbar (e.g. additional filters) */
   extraToolbar?: ReactNode;
-
-  // Empty-state customisation passed through to <NoDataFound>
+  onRefetch?: () => void;
+  enableExport?: boolean;
+  exportFilename?: string;
+  enableColumnToggle?: boolean;
+  columnVisibility?: VisibilityState;
+  onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
+  enableDensityToggle?: boolean;
   emptyTitle?: string;
   emptyDescription?: string;
-
-  /** Optional class override for the root wrapper */
+  headerNode?: ReactNode;
   className?: string;
 }
 
 // ---------------------------------------------------------------------------
-// Skeleton body — mirrors the real table structure exactly
+// Skeleton rows
 // ---------------------------------------------------------------------------
 
 function TableSkeletonRows({
@@ -145,15 +166,72 @@ function TableSkeletonRows({
 }
 
 // ---------------------------------------------------------------------------
+// Density config
+// ---------------------------------------------------------------------------
+
+const densityClass: Record<TableDensity, string> = {
+  compact: "[&_td]:py-1.5 [&_th]:py-2",
+  default: "",
+  comfortable: "[&_td]:py-4 [&_th]:py-4",
+};
+
+const densityIcons: Record<TableDensity, ReactNode> = {
+  compact: <AlignJustify className="h-3.5 w-3.5" />,
+  default: <AlignCenter className="h-3.5 w-3.5" />,
+  comfortable: <AlignLeft className="h-3.5 w-3.5" />,
+};
+
+// ---------------------------------------------------------------------------
+// CSV export
+// ---------------------------------------------------------------------------
+
+function exportToCSV<TData>(
+  data: TData[],
+  columns: ColumnDef<TData, unknown>[],
+  filename: string
+) {
+  const filtered = columns.filter(
+    (col) => col.id !== "select" && col.id !== "_actions"
+  );
+  const headers = filtered.map((col) => {
+    if (typeof col.header === "string") return col.header;
+    if ("accessorKey" in col && typeof col.accessorKey === "string")
+      return col.accessorKey;
+    return col.id ?? "";
+  });
+  const accessors = filtered.map((col) =>
+    "accessorKey" in col && typeof col.accessorKey === "string"
+      ? col.accessorKey
+      : (col.id ?? "")
+  );
+  const rows = data.map((row: any) =>
+    accessors.map((key) => {
+      const val = key.split(".").reduce((acc: any, k: string) => acc?.[k], row);
+      return typeof val === "string"
+        ? `"${val.replace(/"/g, '""')}"`
+        : (val ?? "");
+    })
+  );
+  const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
 // DataTable
 // ---------------------------------------------------------------------------
 
-export function DataTable<TData, TValue>({
-  columns,
+export function DataTable<TData, TValue = unknown>({
+  columns: rawColumns,
   data,
   pagination,
   enableSearch = false,
-  searchPlaceholder = "Search…",
+  searchPlaceholder = "Search\u2026",
   searchValue = "",
   onSearchChange,
   sorting,
@@ -161,11 +239,21 @@ export function DataTable<TData, TValue>({
   rowSelection = {},
   onRowSelectionChange,
   bulkActions,
+  rowActions,
+  onRowClick,
   isLoading = false,
   skeletonRows = 5,
   extraToolbar,
+  onRefetch,
+  enableExport = false,
+  exportFilename = "export",
+  enableColumnToggle = false,
+  columnVisibility: externalColumnVisibility,
+  onColumnVisibilityChange,
+  enableDensityToggle = false,
   emptyTitle = "No results found",
   emptyDescription,
+  headerNode,
   className,
 }: DataTableProps<TData, TValue>) {
   const tableId = useId();
@@ -178,16 +266,85 @@ export function DataTable<TData, TValue>({
     onPageChange,
     onRowsPerPageChange,
   } = pagination;
-
   const totalPages = Math.max(1, Math.ceil(totalCount / rowsPerPage));
 
   const [internalRowSelection, setInternalRowSelection] =
     useState<RowSelectionState>({});
+  const [internalColumnVisibility, setInternalColumnVisibility] =
+    useState<VisibilityState>({});
+  const [density, setDensity] = useState<TableDensity>("default");
+  const [selectAllPages, setSelectAllPages] = useState(false);
+
   const resolvedRowSelection = onRowSelectionChange
     ? rowSelection
     : internalRowSelection;
   const resolvedOnRowSelectionChange =
     onRowSelectionChange || setInternalRowSelection;
+  const resolvedColumnVisibility =
+    externalColumnVisibility ?? internalColumnVisibility;
+  const resolvedOnColumnVisibilityChange =
+    onColumnVisibilityChange ?? setInternalColumnVisibility;
+
+  // Auto-inject _actions column
+  const columns: ColumnDef<TData, any>[] = [
+    ...(rawColumns as ColumnDef<TData, any>[]),
+    ...(rowActions && rowActions.length > 0
+      ? [
+          {
+            id: "_actions",
+            header: () => null,
+            enableSorting: false,
+            enableHiding: false,
+            cell: ({ row }: { row: any }) => {
+              const rowData = row.original as TData;
+              const visibleActions = rowActions.filter(
+                (a) => !a.hidden?.(rowData)
+              );
+              if (!visibleActions.length) return null;
+              return (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                    >
+                      <span className="text-base leading-none font-bold">
+                        \u22ee
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    {visibleActions.map((action, i) => (
+                      <button
+                        key={i}
+                        className={cn(
+                          "flex w-full items-center gap-2 px-2 py-1.5 text-sm rounded-sm cursor-pointer hover:bg-muted transition-colors",
+                          action.variant === "destructive" &&
+                            "text-destructive hover:text-destructive hover:bg-destructive/10"
+                        )}
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          action.onClick(rowData);
+                        }}
+                      >
+                        {action.icon && (
+                          <span className="h-3.5 w-3.5 flex items-center">
+                            {action.icon}
+                          </span>
+                        )}
+                        {action.label}
+                      </button>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            },
+          } as ColumnDef<TData, any>,
+        ]
+      : []),
+  ];
 
   const table = useReactTable({
     data,
@@ -197,6 +354,7 @@ export function DataTable<TData, TValue>({
     ...(onSortingChange ? { getSortedRowModel: getSortedRowModel() } : {}),
     onSortingChange,
     onRowSelectionChange: resolvedOnRowSelectionChange,
+    onColumnVisibilityChange: resolvedOnColumnVisibilityChange,
     manualPagination: true,
     manualFiltering: true,
     manualSorting: true,
@@ -204,27 +362,54 @@ export function DataTable<TData, TValue>({
     state: {
       ...(sorting ? { sorting } : {}),
       rowSelection: resolvedRowSelection,
+      columnVisibility: resolvedColumnVisibility,
     },
   });
 
   const selectedRows = table.getSelectedRowModel().rows.map((r) => r.original);
-  const selectionCount = selectedRows.length;
-  const hasSelection = selectionCount > 0;
+  const selectionCount = selectAllPages ? totalCount : selectedRows.length;
+  const hasSelection = selectAllPages || selectedRows.length > 0;
+  const allPageRowsSelected = table.getIsAllRowsSelected();
 
   const startRow = Math.min(totalCount, (currentPage - 1) * rowsPerPage + 1);
   const endRow = Math.min(currentPage * rowsPerPage, totalCount);
   const showEmpty = !isLoading && data.length === 0;
-  const showToolbar = enableSearch || !!bulkActions || !!extraToolbar;
+  const showToolbar =
+    enableSearch ||
+    !!bulkActions?.length ||
+    !!extraToolbar ||
+    !!onRefetch ||
+    enableColumnToggle ||
+    enableDensityToggle ||
+    enableExport;
+
+  const cycleDensity = useCallback(() => {
+    setDensity((d) =>
+      d === "compact" ? "default" : d === "default" ? "comfortable" : "compact"
+    );
+  }, []);
+
+  // Reset selectAllPages when selection is cleared
+  const prevCountRef = useRef(selectedRows.length);
+  if (selectAllPages && selectedRows.length === 0 && prevCountRef.current > 0) {
+    setSelectAllPages(false);
+  }
+  prevCountRef.current = selectedRows.length;
 
   return (
-    <div className={cn("space-y-3 w-full min-w-0", className)}>
-      {/* ── Premium Toolbar ── */}
-      {showToolbar && (
-        <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-3 rounded-xl border border-border/60 bg-card/60 backdrop-blur-sm shadow-sm overflow-hidden">
-          {/* Subtle gradient accent on the left edge */}
-          <div className="absolute inset-y-0 left-0 w-0.5 rounded-l-xl bg-gradient-to-b from-primary/60 via-primary/30 to-transparent" />
+    <Card
+      className={cn(
+        "w-full min-w-0 border-border/60 shadow-sm overflow-hidden flex flex-col",
+        className
+      )}
+    >
+      {headerNode}
 
-          {/* Search */}
+      {/* Toolbar */}
+      {showToolbar && (
+        <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-3 px-4 py-3 border-b border-border/60 bg-card">
+          <div className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-primary via-primary/60 to-transparent rounded-r-full" />
+
           {enableSearch && (
             <div className="flex-1 min-w-0">
               <SearchInput
@@ -239,104 +424,332 @@ export function DataTable<TData, TValue>({
             </div>
           )}
 
-          {/* Extra Toolbar (e.g. Filters) */}
           {extraToolbar && (
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               {extraToolbar}
             </div>
           )}
 
-          {/* Divider (only on sm+) */}
-          {(enableSearch || extraToolbar) && bulkActions && (
-            <div className="hidden sm:block h-8 w-px bg-border/60 shrink-0" />
-          )}
+          <div className="flex items-center gap-1 shrink-0 sm:ml-auto">
+            <TooltipProvider delayDuration={300}>
+              {/* Utility icon buttons — subtle ghost style */}
+              {onRefetch && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-40"
+                      onClick={onRefetch}
+                      disabled={isLoading}
+                      aria-label="Refresh"
+                    >
+                      <RefreshCw
+                        className={cn(
+                          "h-4.5 w-4.5",
+                          isLoading && "animate-spin"
+                        )}
+                      />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Refresh</TooltipContent>
+                </Tooltip>
+              )}
 
-          {/* Bulk Actions — always visible, disabled until selection */}
-          {bulkActions && (
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Selection pill */}
-              <motion.div
-                animate={{
-                  opacity: hasSelection ? 1 : 0,
-                  scale: hasSelection ? 1 : 0.8,
-                  width: hasSelection ? "auto" : 0,
-                }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap">
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-                    {selectionCount}
-                  </span>
-                  selected
-                </div>
-              </motion.div>
+              {enableExport && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                      onClick={() =>
+                        exportToCSV(data, rawColumns as any, exportFilename)
+                      }
+                      aria-label="Export CSV"
+                    >
+                      <Download className="h-4.5 w-4.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Export CSV</TooltipContent>
+                </Tooltip>
+              )}
 
-              {/* The actual action buttons — always rendered */}
-              {bulkActions.render(selectedRows, !hasSelection)}
-            </div>
-          )}
+              {enableDensityToggle && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                      onClick={cycleDensity}
+                      aria-label={`Density: ${density}`}
+                    >
+                      {densityIcons[density]}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    Density:{" "}
+                    {density.charAt(0).toUpperCase() + density.slice(1)}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              {enableColumnToggle && (
+                <DropdownMenu>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          className="inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                          aria-label="Toggle columns"
+                        >
+                          <Columns3 className="h-4.5 w-4.5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      Toggle Columns
+                    </TooltipContent>
+                  </Tooltip>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">
+                      Visible columns
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {table
+                      .getAllColumns()
+                      .filter(
+                        (col) =>
+                          col.getCanHide() &&
+                          col.id !== "select" &&
+                          col.id !== "_actions"
+                      )
+                      .map((col) => (
+                        <DropdownMenuItem
+                          key={col.id}
+                          className="capitalize text-sm flex items-center gap-2 cursor-pointer"
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            col.toggleVisibility(!col.getIsVisible());
+                          }}
+                        >
+                          <span
+                            className={cn(
+                              "flex h-3.5 w-3.5 items-center justify-center rounded border",
+                              col.getIsVisible()
+                                ? "bg-primary border-primary"
+                                : "bg-transparent border-border/60"
+                            )}
+                          >
+                            {col.getIsVisible() && (
+                              <svg
+                                className="h-2.5 w-2.5 text-primary-foreground"
+                                fill="none"
+                                viewBox="0 0 12 12"
+                              >
+                                <path
+                                  d="M2 6l3 3 5-5"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            )}
+                          </span>
+                          {col.id}
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {/* Divider before bulk actions */}
+              {bulkActions && bulkActions.length > 0 && (
+                <div className="h-5 w-px bg-border mx-1" />
+              )}
+
+              {/* Bulk action icon buttons */}
+              {bulkActions?.map((action, i) => {
+                if (action.hidden?.(selectedRows)) return null;
+                const isActive = hasSelection;
+                return (
+                  <Tooltip key={i}>
+                    <TooltipTrigger asChild>
+                      <button
+                        disabled={!isActive}
+                        onClick={() =>
+                          isActive &&
+                          action.onClick(selectAllPages ? data : selectedRows)
+                        }
+                        aria-label={action.label}
+                        className={cn(
+                          "inline-flex items-center justify-center h-9 w-9 rounded-md transition-colors",
+                          !isActive && "opacity-35 cursor-not-allowed",
+                          isActive && action.variant === "destructive"
+                            ? "text-destructive hover:bg-destructive/10"
+                            : isActive
+                              ? "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                              : "text-muted-foreground"
+                        )}
+                      >
+                        {action.icon}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      {action.label}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+
+              {/* Selection count badge */}
+              <AnimatePresence>
+                {hasSelection && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.75, width: 0 }}
+                    animate={{ opacity: 1, scale: 1, width: "auto" }}
+                    exit={{ opacity: 0, scale: 0.75, width: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="overflow-hidden"
+                  >
+                    <span className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-[11px] font-semibold px-2 py-0.5 rounded-full ml-1 whitespace-nowrap">
+                      {selectionCount} {selectAllPages ? "rows" : "selected"}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </TooltipProvider>
+          </div>
         </div>
       )}
 
-      {/* ── Table ── */}
-      <div className="rounded-xl border border-border/60 bg-card shadow-sm w-full min-w-0 overflow-hidden">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="hover:bg-transparent">
-                {hg.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
+      {/* Select-All-Pages Banner */}
+      <AnimatePresence>
+        {allPageRowsSelected && totalCount > rowsPerPage && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center justify-center gap-3 bg-primary/5 border-b border-primary/20 px-4 py-2 text-xs text-primary">
+              <CheckSquare className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                All <strong>{rowsPerPage}</strong> rows on this page are
+                selected.
+              </span>
+              {!selectAllPages ? (
+                <button
+                  className="font-semibold underline underline-offset-2 hover:no-underline"
+                  onClick={() => setSelectAllPages(true)}
+                >
+                  Select all {totalCount} rows
+                </button>
+              ) : (
+                <button
+                  className="font-semibold underline underline-offset-2 hover:no-underline"
+                  onClick={() => {
+                    setSelectAllPages(false);
+                    table.resetRowSelection();
+                  }}
+                >
+                  Clear selection
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Table */}
+      <Table
+        wrapperClassName="w-full min-w-0 max-h-[calc(100vh-17rem)] min-h-[300px]"
+        className={cn("w-full", densityClass[density])}
+      >
+        <TableHeader className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">
+          {table.getHeaderGroups().map((hg) => (
+            <TableRow
+              key={hg.id}
+              className="hover:bg-transparent border-b border-border/60"
+            >
+              {hg.headers.map((header) => {
+                const canSort = header.column.getCanSort();
+                const sorted = header.column.getIsSorted();
+                return (
+                  <TableHead
+                    key={header.id}
+                    className="font-semibold text-xs uppercase tracking-wide text-muted-foreground"
+                  >
+                    {header.isPlaceholder ? null : canSort ? (
+                      <button
+                        className="flex items-center gap-1.5 group/sort select-none hover:text-foreground transition-colors"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(
                           header.column.columnDef.header,
                           header.getContext()
                         )}
+                        <span className="text-muted-foreground/60 group-hover/sort:text-muted-foreground transition-colors">
+                          {sorted === "asc" ? (
+                            <ArrowUp className="h-3 w-3" />
+                          ) : sorted === "desc" ? (
+                            <ArrowDown className="h-3 w-3" />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3" />
+                          )}
+                        </span>
+                      </button>
+                    ) : (
+                      flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )
+                    )}
                   </TableHead>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableHeader>
+
+        <TableBody>
+          {isLoading ? (
+            <TableSkeletonRows rows={skeletonRows} columns={columns.length} />
+          ) : showEmpty ? null : (
+            table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() && "selected"}
+                className={cn(
+                  "border-b border-border/40 transition-colors",
+                  onRowClick &&
+                    "cursor-pointer hover:bg-primary/5 active:bg-primary/10"
+                )}
+                onClick={
+                  onRowClick ? () => onRowClick(row.original) : undefined
+                }
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
                 ))}
               </TableRow>
-            ))}
-          </TableHeader>
+            ))
+          )}
+        </TableBody>
+      </Table>
 
-          <TableBody>
-            {isLoading ? (
-              <TableSkeletonRows rows={skeletonRows} columns={columns.length} />
-            ) : showEmpty ? null : (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      {showEmpty && (
+        <div className="p-6">
+          <NoDataFound
+            variant={searchValue ? "search" : "empty"}
+            title={emptyTitle}
+            description={emptyDescription}
+          />
+        </div>
+      )}
 
-        {showEmpty && (
-          <div className="p-6">
-            <NoDataFound
-              variant={searchValue ? "search" : "empty"}
-              title={emptyTitle}
-              description={emptyDescription}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* ── Pagination footer ── */}
+      {/* Pagination Footer */}
       {!showEmpty && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1 pt-1">
-          {/* Left: rows-per-page + entry count */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-border/60 bg-card z-10 relative">
           <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap justify-center sm:justify-start">
             <div className="flex items-center gap-2">
               <span className="whitespace-nowrap text-xs">Rows per page</span>
@@ -375,7 +788,7 @@ export function DataTable<TData, TValue>({
                   <span className="font-semibold text-foreground">
                     {startRow}
                   </span>
-                  {" – "}
+                  {" \u2013 "}
                   <span className="font-semibold text-foreground">
                     {endRow}
                   </span>
@@ -389,58 +802,58 @@ export function DataTable<TData, TValue>({
             </span>
           </div>
 
-          {/* Right: page navigation */}
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              className="hidden h-7 w-7 p-0 lg:flex rounded-lg border-border/60 text-muted-foreground hover:text-foreground"
+          <div className="flex items-center gap-1.5">
+            {/* First page */}
+            <button
+              className="hidden lg:inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-30 transition-colors"
               onClick={() => onPageChange(1)}
               disabled={currentPage <= 1 || isLoading}
               aria-label="First page"
             >
-              <ChevronsLeft className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-7 w-7 p-0 rounded-lg border-border/60 text-muted-foreground hover:text-foreground"
+              <ChevronsLeft className="h-4 w-4" />
+            </button>
+
+            {/* Prev */}
+            <button
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage <= 1 || isLoading}
               aria-label="Previous page"
             >
-              <ChevronLeft className="h-3.5 w-3.5" />
-            </Button>
+              <ChevronLeft className="h-4 w-4" />
+              Prev
+            </button>
 
-            <div className="px-2 text-xs text-muted-foreground whitespace-nowrap">
-              <span className="font-semibold text-foreground">
-                {currentPage}
-              </span>
-              {" / "}
-              <span className="font-semibold text-foreground">
-                {totalPages}
-              </span>
+            {/* Page indicator */}
+            <div className="px-3 text-xs font-medium text-muted-foreground whitespace-nowrap">
+              <span className="font-bold text-foreground">{currentPage}</span>
+              <span className="mx-1">/</span>
+              <span className="font-bold text-foreground">{totalPages}</span>
             </div>
 
-            <Button
-              variant="outline"
-              className="h-7 w-7 p-0 rounded-lg border-border/60 text-muted-foreground hover:text-foreground"
+            {/* Next */}
+            <button
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage >= totalPages || isLoading}
               aria-label="Next page"
             >
-              <ChevronRight className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="outline"
-              className="hidden h-7 w-7 p-0 lg:flex rounded-lg border-border/60 text-muted-foreground hover:text-foreground"
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </button>
+
+            {/* Last page */}
+            <button
+              className="hidden lg:inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-30 transition-colors"
               onClick={() => onPageChange(totalPages)}
               disabled={currentPage >= totalPages || isLoading}
               aria-label="Last page"
             >
-              <ChevronsRight className="h-3.5 w-3.5" />
-            </Button>
+              <ChevronsRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

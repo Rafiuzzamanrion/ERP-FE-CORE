@@ -3,7 +3,7 @@
 import { memo, useMemo, useState } from "react";
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal, Download, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -196,103 +196,88 @@ export default memo(function RecentSales({
   );
 
   return (
-    <Card className="border-none shadow-sm h-full w-full min-w-0 overflow-hidden flex flex-col bg-card/40 backdrop-blur-3xl relative">
-      {/* Decorative gradient blur in background */}
-      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-
-      <CardHeader className="pb-5 pt-6 px-6 relative z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-4 h-4"
-                >
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
+    <DataTable
+      className="flex flex-col h-[calc(100vh-12rem)] relative bg-card/50 backdrop-blur-sm"
+      headerNode={
+        <>
+          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+          <CardHeader className="pb-5 pt-6 px-6 relative z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-4 h-4"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </div>
+                  <CardTitle className="text-xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    Recent Sales
+                  </CardTitle>
+                </div>
+                <p className="text-sm text-muted-foreground ml-10">
+                  Manage and review your latest transactions and orders.
+                </p>
               </div>
-              <CardTitle className="text-xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Recent Sales
-              </CardTitle>
             </div>
-            <p className="text-sm text-muted-foreground ml-10">
-              Manage and review your latest transactions and orders.
-            </p>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-1 px-6 pb-6 pt-0 relative z-10">
-        <DataTable
-          columns={columns}
-          data={paginated}
-          isLoading={isLoading}
-          skeletonRows={5}
-          emptyTitle={search ? "No sales match your search" : "No sales yet"}
-          emptyDescription={
-            search
-              ? "Try a different product name or staff member."
-              : "Sales will appear here once orders are created."
-          }
-          enableSearch
-          searchPlaceholder="Search products or staff…"
-          searchValue={search}
-          onSearchChange={(val) => {
-            setSearch(val);
-            setCurrentPage(1);
-          }}
-          rowSelection={rowSelection}
-          onRowSelectionChange={setRowSelection}
-          bulkActions={{
-            render: (rows, disabled) => (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 bg-background"
-                  disabled={disabled}
-                  onClick={() =>
-                    popup.success(`Exporting ${rows.length} records…`)
-                  }
-                >
-                  <Download className="mr-1.5 h-3.5 w-3.5" />
-                  Export
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="h-8 shadow-sm hover:shadow-md transition-all"
-                  disabled={disabled}
-                  onClick={() => popup.error(`Deleted ${rows.length} records`)}
-                >
-                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                  Delete
-                </Button>
-              </>
-            ),
-          }}
-          pagination={{
-            currentPage,
-            totalCount,
-            rowsPerPage,
-            pageSizeOptions: [5, 10, 20],
-            onPageChange: setCurrentPage,
-            onRowsPerPageChange: (size) => {
-              setRowsPerPage(size);
-              setCurrentPage(1);
-            },
-          }}
-        />
-      </CardContent>
-    </Card>
+          </CardHeader>
+        </>
+      }
+      columns={columns}
+      data={paginated}
+      isLoading={isLoading}
+      skeletonRows={5}
+      emptyTitle={search ? "No sales match your search" : "No sales yet"}
+      emptyDescription={
+        search
+          ? "Try a different product name or staff member."
+          : "Sales will appear here once orders are created."
+      }
+      enableSearch
+      searchPlaceholder="Search products or staff…"
+      searchValue={search}
+      onSearchChange={(val) => {
+        setSearch(val);
+        setCurrentPage(1);
+      }}
+      rowSelection={rowSelection}
+      onRowSelectionChange={setRowSelection}
+      bulkActions={[
+        {
+          label: "Export selected",
+          icon: <Download className="h-3.5 w-3.5" />,
+          variant: "outline",
+          onClick: (rows) => popup.success(`Exporting ${rows.length} records…`),
+        },
+        {
+          label: "Delete selected",
+          icon: <Trash2 className="h-3.5 w-3.5" />,
+          variant: "destructive",
+          onClick: (rows) => popup.error(`Deleted ${rows.length} records`),
+        },
+      ]}
+      pagination={{
+        currentPage,
+        totalCount,
+        rowsPerPage,
+        pageSizeOptions: [5, 10, 20],
+        onPageChange: setCurrentPage,
+        onRowsPerPageChange: (size) => {
+          setRowsPerPage(size);
+          setCurrentPage(1);
+        },
+      }}
+    />
   );
 });

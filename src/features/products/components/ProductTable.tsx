@@ -208,36 +208,26 @@ export default memo(function ProductTable({
         onPageChange,
         onRowsPerPageChange,
       }}
-      bulkActions={{
-        render: (rows, disabled) => (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 bg-background border-border/60 shadow-sm"
-              disabled={disabled}
-              onClick={() =>
-                popup.success(`Exporting ${rows.length} products…`)
-              }
-            >
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              Export
-            </Button>
-            {!isEmployee && (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="h-8 shadow-sm"
-                disabled={disabled}
-                onClick={() => popup.error(`Deleted ${rows.length} products`)}
-              >
-                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                Delete
-              </Button>
-            )}
-          </>
-        ),
-      }}
+      bulkActions={[
+        {
+          label: "Export selected",
+          icon: <Download className="h-3.5 w-3.5" />,
+          variant: "outline",
+          onClick: (rows) =>
+            popup.success(`Exporting ${rows.length} products…`),
+        },
+        ...(!isEmployee
+          ? [
+              {
+                label: "Delete selected",
+                icon: <Trash2 className="h-3.5 w-3.5" />,
+                variant: "destructive" as const,
+                onClick: (rows: Product[]) =>
+                  popup.error(`Deleted ${rows.length} products`),
+              },
+            ]
+          : []),
+      ]}
       emptyTitle="No products found"
       emptyDescription="Try adjusting your filters or search query."
     />

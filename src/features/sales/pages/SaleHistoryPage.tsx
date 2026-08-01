@@ -169,22 +169,15 @@ export default function SaleHistoryPage() {
             setPage(1);
           },
         }}
-        bulkActions={{
-          render: (rows, disabled) => (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 bg-background shadow-sm border-border/60"
-              disabled={disabled}
-              onClick={() =>
-                popup.success(`Exporting ${rows.length} sales records…`)
-              }
-            >
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              Export
-            </Button>
-          ),
-        }}
+        bulkActions={[
+          {
+            label: "Export selected",
+            icon: <Download className="h-3.5 w-3.5" />,
+            variant: "outline",
+            onClick: (rows) =>
+              popup.success(`Exporting ${rows.length} sales records…`),
+          },
+        ]}
         emptyTitle={searchInput ? "No sales match your search" : "No sales yet"}
         emptyDescription={
           searchInput
