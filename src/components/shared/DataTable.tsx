@@ -124,10 +124,15 @@ export interface DataTableProps<TData, TValue = unknown> {
   columnVisibility?: VisibilityState;
   onColumnVisibilityChange?: OnChangeFn<VisibilityState>;
   enableDensityToggle?: boolean;
+  defaultDensity?: TableDensity;
+  rowHeight?: string | number;
   emptyTitle?: string;
   emptyDescription?: string;
   headerNode?: ReactNode;
   className?: string;
+  tableWrapperClassName?: string;
+  tableClassName?: string;
+  rowClassName?: string | ((row: TData) => string);
 }
 
 // ---------------------------------------------------------------------------
@@ -251,10 +256,15 @@ export function DataTable<TData, TValue = unknown>({
   columnVisibility: externalColumnVisibility,
   onColumnVisibilityChange,
   enableDensityToggle = false,
+  defaultDensity = "default",
+  rowHeight = 50,
   emptyTitle = "No results found",
   emptyDescription,
   headerNode,
   className,
+  tableWrapperClassName,
+  tableClassName,
+  rowClassName,
 }: DataTableProps<TData, TValue>) {
   const tableId = useId();
 
@@ -272,7 +282,7 @@ export function DataTable<TData, TValue = unknown>({
     useState<RowSelectionState>({});
   const [internalColumnVisibility, setInternalColumnVisibility] =
     useState<VisibilityState>({});
-  const [density, setDensity] = useState<TableDensity>("default");
+  const [density, setDensity] = useState<TableDensity>(defaultDensity);
   const [selectAllPages, setSelectAllPages] = useState(false);
 
   const resolvedRowSelection = onRowSelectionChange
@@ -660,14 +670,31 @@ export function DataTable<TData, TValue = unknown>({
 
       {/* Table */}
       <Table
-        wrapperClassName="w-full min-w-0 max-h-[calc(100vh-17rem)] min-h-[300px]"
-        className={cn("w-full", densityClass[density])}
+        wrapperClassName={cn(
+          "w-full min-w-0 max-h-[calc(100vh-17rem)] min-h-[300px]",
+          tableWrapperClassName
+        )}
+        className={cn(
+          "w-full",
+          rowHeight ? "[&_td]:py-1 [&_th]:py-1" : densityClass[density],
+          tableClassName
+        )}
       >
         <TableHeader className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">
           {table.getHeaderGroups().map((hg) => (
             <TableRow
               key={hg.id}
               className="hover:bg-transparent border-b border-border/60"
+              style={
+                rowHeight
+                  ? {
+                      height:
+                        typeof rowHeight === "number"
+                          ? `${rowHeight}px`
+                          : rowHeight,
+                    }
+                  : undefined
+              }
             >
               {hg.headers.map((header) => {
                 const canSort = header.column.getCanSort();
@@ -675,7 +702,10 @@ export function DataTable<TData, TValue = unknown>({
                 return (
                   <TableHead
                     key={header.id}
-                    className="font-semibold text-xs uppercase tracking-wide text-muted-foreground"
+                    className={cn(
+                      "font-semibold text-xs uppercase tracking-wide text-muted-foreground",
+                      (header.column.columnDef.meta as any)?.className
+                    )}
                   >
                     {header.isPlaceholder ? null : canSort ? (
                       <button
@@ -720,14 +750,32 @@ export function DataTable<TData, TValue = unknown>({
                 className={cn(
                   "border-b border-border/40 transition-colors",
                   onRowClick &&
-                    "cursor-pointer hover:bg-primary/5 active:bg-primary/10"
+                    "cursor-pointer hover:bg-primary/5 active:bg-primary/10",
+                  typeof rowClassName === "function"
+                    ? rowClassName(row.original)
+                    : rowClassName
                 )}
+                style={
+                  rowHeight
+                    ? {
+                        height:
+                          typeof rowHeight === "number"
+                            ? `${rowHeight}px`
+                            : rowHeight,
+                      }
+                    : undefined
+                }
                 onClick={
                   onRowClick ? () => onRowClick(row.original) : undefined
                 }
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell
+                    key={cell.id}
+                    className={
+                      (cell.column.columnDef.meta as any)?.className as string
+                    }
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
