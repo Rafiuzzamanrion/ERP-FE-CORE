@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useQueryParams } from "@/hooks/use-query-params";
 import { RotateCw, Tag, Trash2, Pencil, Download } from "lucide-react";
 import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ type Category = {
 
 export default function CategoriesListPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const { setParams } = useQueryParams();
   const [searchInput, setSearchInput] = useState(
     searchParams.get("search") ?? ""
   );
@@ -61,30 +62,12 @@ export default function CategoriesListPage() {
   const [updateCategory] = useUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
 
-  const updateParams = useCallback(
-    (updates: Record<string, string>) => {
-      const next = new URLSearchParams(searchParams);
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value) {
-          next.set(key, value);
-        } else {
-          next.delete(key);
-        }
-      });
-      if (updates.search !== undefined) {
-        next.delete("page");
-      }
-      router.replace(`/categories?${next.toString()}`);
-    },
-    [searchParams, router]
-  );
-
   const handlePageChange = (newPage: number) => {
-    updateParams({ page: String(newPage) });
+    setParams({ page: String(newPage) });
   };
 
   const handleRowsPerPageChange = (newLimit: number) => {
-    updateParams({ limit: String(newLimit), page: "1" });
+    setParams({ limit: String(newLimit), page: "1" });
   };
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -276,7 +259,7 @@ export default function CategoriesListPage() {
           searchValue={searchInput}
           onSearchChange={(val) => {
             setSearchInput(val);
-            updateParams({ search: val });
+            setParams({ search: val }, { resetPageOnKeys: ["search"] });
           }}
           pagination={{
             currentPage: meta?.page ?? 1,

@@ -11,6 +11,7 @@ import {
   RowSelectionState,
   OnChangeFn,
   VisibilityState,
+  Column,
 } from "@tanstack/react-table";
 import {
   Table,
@@ -139,31 +140,35 @@ export interface DataTableProps<TData, TValue = unknown> {
 // Skeleton rows
 // ---------------------------------------------------------------------------
 
-function TableSkeletonRows({
+function TableSkeletonRows<TData, TValue>({
   rows,
   columns,
 }: {
   rows: number;
-  columns: number;
+  columns: Column<TData, TValue>[];
 }) {
   return (
     <>
       {Array.from({ length: rows }).map((_, rowIdx) => (
         <TableRow key={rowIdx} className="hover:bg-transparent animate-pulse">
-          {Array.from({ length: columns }).map((_, colIdx) => (
-            <TableCell key={colIdx}>
-              {colIdx === 0 ? (
-                <Skeleton className="h-4 w-4 rounded" />
-              ) : colIdx === columns - 1 ? (
-                <Skeleton className="h-7 w-7 rounded-full" />
-              ) : (
-                <div className="space-y-1.5">
-                  <Skeleton className="h-3.5 w-full rounded" />
-                  {colIdx === 1 && <Skeleton className="h-2.5 w-1/2 rounded" />}
-                </div>
-              )}
-            </TableCell>
-          ))}
+          {columns.map((column, colIdx) => {
+            const isSelect = column.id === "select";
+            const isActions = column.id === "actions";
+
+            return (
+              <TableCell key={column.id}>
+                {isSelect ? (
+                  <Skeleton className="h-4 w-4 rounded" />
+                ) : isActions ? (
+                  <div className="flex justify-end gap-1">
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                  </div>
+                ) : (
+                  <Skeleton className="h-4 w-[85%] rounded" />
+                )}
+              </TableCell>
+            );
+          })}
         </TableRow>
       ))}
     </>
@@ -741,8 +746,21 @@ export function DataTable<TData, TValue = unknown>({
 
         <TableBody>
           {isLoading ? (
-            <TableSkeletonRows rows={skeletonRows} columns={columns.length} />
-          ) : showEmpty ? null : (
+            <TableSkeletonRows
+              rows={skeletonRows}
+              columns={table.getVisibleLeafColumns()}
+            />
+          ) : showEmpty ? (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="h-64 text-center">
+                <NoDataFound
+                  variant={searchValue ? "search" : "empty"}
+                  title={emptyTitle}
+                  description={emptyDescription}
+                />
+              </TableCell>
+            </TableRow>
+          ) : (
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
@@ -784,16 +802,6 @@ export function DataTable<TData, TValue = unknown>({
           )}
         </TableBody>
       </Table>
-
-      {showEmpty && (
-        <div className="p-6">
-          <NoDataFound
-            variant={searchValue ? "search" : "empty"}
-            title={emptyTitle}
-            description={emptyDescription}
-          />
-        </div>
-      )}
 
       {/* Pagination Footer */}
       {!showEmpty && (
@@ -853,7 +861,7 @@ export function DataTable<TData, TValue = unknown>({
           <div className="flex items-center gap-1.5">
             {/* First page */}
             <button
-              className="hidden lg:inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-30 transition-colors"
+              className="hidden lg:inline-flex items-center justify-center h-8 w-8 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               onClick={() => onPageChange(1)}
               disabled={currentPage <= 1 || isLoading}
               aria-label="First page"
@@ -863,12 +871,12 @@ export function DataTable<TData, TValue = unknown>({
 
             {/* Prev */}
             <button
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage <= 1 || isLoading}
               aria-label="Previous page"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-3.5 w-3.5" />
               Prev
             </button>
 
@@ -881,18 +889,18 @@ export function DataTable<TData, TValue = unknown>({
 
             {/* Next */}
             <button
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage >= totalPages || isLoading}
               aria-label="Next page"
             >
               Next
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-3.5 w-3.5" />
             </button>
 
             {/* Last page */}
             <button
-              className="hidden lg:inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-30 transition-colors"
+              className="hidden lg:inline-flex items-center justify-center h-8 w-8 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               onClick={() => onPageChange(totalPages)}
               disabled={currentPage >= totalPages || isLoading}
               aria-label="Last page"

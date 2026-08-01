@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { RotateCw, Trash2, UserPlus, Download } from "lucide-react";
 import { popup } from "@/components/shared/popup";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useQueryParams } from "@/hooks/use-query-params";
 import {
   Select,
   SelectContent,
@@ -44,7 +45,7 @@ type User = {
 
 export default function UsersListPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const { setParams } = useQueryParams();
 
   const search = searchParams.get("search") ?? "";
   const page = Number(searchParams.get("page")) || 1;
@@ -53,29 +54,11 @@ export default function UsersListPage() {
   const [searchInput, setSearchInput] = useState(search);
   const debouncedSearch = useDebounce(searchInput, 400);
 
-  const updateParams = useCallback(
-    (updates: Record<string, string>) => {
-      const next = new URLSearchParams(searchParams);
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value) {
-          next.set(key, value);
-        } else {
-          next.delete(key);
-        }
-      });
-      if (updates.search !== undefined) {
-        next.delete("page");
-      }
-      router.replace(`/users?${next.toString()}`);
-    },
-    [searchParams, router]
-  );
-
   useEffect(() => {
     if (debouncedSearch !== search) {
-      updateParams({ search: debouncedSearch });
+      setParams({ search: debouncedSearch }, { resetPageOnKeys: ["search"] });
     }
-  }, [debouncedSearch, search, updateParams]);
+  }, [debouncedSearch, search, setParams]);
 
   const {
     data: users = [],
@@ -326,9 +309,9 @@ export default function UsersListPage() {
             totalCount: users.length,
             rowsPerPage: Math.max(users.length, 10),
             pageSizeOptions: [10, 20, 50],
-            onPageChange: (newPage) => updateParams({ page: String(newPage) }),
+            onPageChange: (newPage) => setParams({ page: String(newPage) }),
             onRowsPerPageChange: (newLimit) =>
-              updateParams({ limit: String(newLimit), page: "1" }),
+              setParams({ limit: String(newLimit), page: "1" }),
           }}
           bulkActions={[
             {

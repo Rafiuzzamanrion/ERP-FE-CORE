@@ -13,6 +13,7 @@ import ProductTable from "../components/ProductTable";
 import NoDataFound from "@/components/shared/NoDataFound";
 import ProductListSkeleton from "@/components/shared/ProductListSkeleton";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useQueryParams } from "@/hooks/use-query-params";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -59,38 +60,25 @@ export default function ProductListPage() {
 
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 
-  const updateParams = useCallback(
-    (updates: Record<string, string>) => {
-      const next = new URLSearchParams(searchParams);
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value) {
-          next.set(key, value);
-        } else {
-          next.delete(key);
-        }
-      });
-      if (updates.search !== undefined || updates.category !== undefined) {
-        next.delete("page");
-      }
-      router.replace(`/products?${next.toString()}`);
-    },
-    [searchParams, router]
-  );
+  const { setParams } = useQueryParams();
 
   const debouncedSearch = useDebounce(searchInput, 400);
 
   useEffect(() => {
     if (debouncedSearch !== search) {
-      updateParams({ search: debouncedSearch });
+      setParams({ search: debouncedSearch }, { resetPageOnKeys: ["search"] });
     }
-  }, [debouncedSearch, search, updateParams]);
+  }, [debouncedSearch, search, setParams]);
 
   const handleCategoryChange = (value: string) => {
-    updateParams({ category: value === "all" ? "" : value });
+    setParams(
+      { category: value === "all" ? "" : value },
+      { resetPageOnKeys: ["category"] }
+    );
   };
 
   const handlePageChange = (newPage: number) => {
-    updateParams({ page: String(newPage) });
+    setParams({ page: String(newPage) });
   };
 
   const handleDelete = (id: string) => {
@@ -165,7 +153,7 @@ export default function ProductListPage() {
           onSearchChange={setSearchInput}
           onPageChange={handlePageChange}
           onRowsPerPageChange={(limit) =>
-            updateParams({ limit: String(limit), page: "1" })
+            setParams({ limit: String(limit), page: "1" })
           }
           onDelete={handleDelete}
           extraToolbar={
