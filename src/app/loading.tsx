@@ -12,8 +12,8 @@ export default function Loading() {
         <div className="absolute inset-0 bg-primary/20 blur-[64px] rounded-full h-48 w-48 -translate-x-1/4 -translate-y-1/4" />
 
         <div className="relative flex items-center justify-center w-24 h-24 mb-6">
-          <div className="absolute inset-0 border-[3px] border-primary/50 rounded-lg animate-[spin_3s_linear_infinite]" />
-          <div className="absolute inset-2 border-[3px] border-primary/70 rounded-lg animate-[spin_4s_linear_infinite_reverse]" />
+          <div className="absolute inset-0 border-[3px] loader-ring-1 rounded-lg animate-[spin_3s_linear_infinite]" />
+          <div className="absolute inset-2 border-[3px] loader-ring-2 rounded-lg animate-[spin_4s_linear_infinite_reverse]" />
           <div className="relative z-10 text-primary animate-[spin_2s_linear_infinite]">
             <Hexagon size={44} strokeWidth={2.5} className="fill-primary/20" />
           </div>

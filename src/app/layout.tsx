@@ -44,9 +44,10 @@ export default function RootLayout({
                       }
                       h /= 6;
                     } else { h = s = 0; }
-                    var hslStr = Math.round(h * 360) + " " + Math.round(s * 100) + "% " + Math.round(l * 100) + "%";
+                    var hDeg = Math.round(h * 360);
+                    var hslStr = hDeg + " " + Math.round(s * 100) + "% " + Math.round(l * 100) + "%";
                     var sEl = document.createElement('style');
-                    sEl.innerHTML = ":root, .dark { --color-primary: hsl(" + hslStr + "); }";
+                    sEl.innerHTML = ":root, .dark { --color-primary: hsl(" + hslStr + "); } .loader-ring-1 { border-color: hsl(" + hslStr + " / 0.5); } .loader-ring-2 { border-color: hsl(" + hslStr + " / 0.7); }";
                     document.head.appendChild(sEl);
                   }
                 }
