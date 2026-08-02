@@ -96,8 +96,8 @@ interface ServerPaginationProps {
   totalCount: number;
   rowsPerPage: number;
   pageSizeOptions?: number[];
-  onPageChange: (page: number) => void;
-  onRowsPerPageChange: (size: number) => void;
+  setCurrentPage: (page: number) => void;
+  setRowsPerPage: (size: number) => void;
 }
 
 export interface DataTableProps<TData, TValue = unknown> {
@@ -278,8 +278,8 @@ export function DataTable<TData, TValue = unknown>({
     totalCount,
     rowsPerPage,
     pageSizeOptions = [10, 20, 30, 50],
-    onPageChange,
-    onRowsPerPageChange,
+    setCurrentPage,
+    setRowsPerPage,
   } = pagination;
   const totalPages = Math.max(1, Math.ceil(totalCount / rowsPerPage));
 
@@ -432,7 +432,7 @@ export function DataTable<TData, TValue = unknown>({
                 initialValue={searchValue}
                 placeholder={searchPlaceholder}
                 onSearch={(val) => {
-                  onPageChange(1);
+                  setCurrentPage(1);
                   onSearchChange?.(val);
                 }}
               />
@@ -812,8 +812,8 @@ export function DataTable<TData, TValue = unknown>({
               <Select
                 value={`${rowsPerPage}`}
                 onValueChange={(val) => {
-                  onRowsPerPageChange(Number(val));
-                  onPageChange(1);
+                  setRowsPerPage(Number(val));
+                  setCurrentPage(1);
                 }}
               >
                 <SelectTrigger className="h-7 w-[65px] bg-card text-xs border-border/60">
@@ -862,7 +862,7 @@ export function DataTable<TData, TValue = unknown>({
             {/* First page */}
             <button
               className="hidden lg:inline-flex items-center justify-center h-8 w-8 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              onClick={() => onPageChange(1)}
+              onClick={() => setCurrentPage(1)}
               disabled={currentPage <= 1 || isLoading}
               aria-label="First page"
             >
@@ -872,7 +872,7 @@ export function DataTable<TData, TValue = unknown>({
             {/* Prev */}
             <button
               className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              onClick={() => onPageChange(currentPage - 1)}
+              onClick={() => setCurrentPage(currentPage - 1)}
               disabled={currentPage <= 1 || isLoading}
               aria-label="Previous page"
             >
@@ -890,7 +890,7 @@ export function DataTable<TData, TValue = unknown>({
             {/* Next */}
             <button
               className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              onClick={() => onPageChange(currentPage + 1)}
+              onClick={() => setCurrentPage(currentPage + 1)}
               disabled={currentPage >= totalPages || isLoading}
               aria-label="Next page"
             >
@@ -901,7 +901,7 @@ export function DataTable<TData, TValue = unknown>({
             {/* Last page */}
             <button
               className="hidden lg:inline-flex items-center justify-center h-8 w-8 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              onClick={() => onPageChange(totalPages)}
+              onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage >= totalPages || isLoading}
               aria-label="Last page"
             >

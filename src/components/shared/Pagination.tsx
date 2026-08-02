@@ -6,14 +6,14 @@ import { cn } from "@/lib/utils";
 interface PaginationProps {
   page: number;
   totalPages: number;
-  onPageChange: (page: number) => void;
+  setCurrentPage: (page: number) => void;
   total?: number;
 }
 
 export const Pagination = memo(function Pagination({
   page,
   totalPages,
-  onPageChange,
+  setCurrentPage,
   total,
 }: PaginationProps) {
   const getVisiblePages = () => {
@@ -47,7 +47,7 @@ export const Pagination = memo(function Pagination({
           variant="outline"
           size="icon"
           className="h-8 w-8"
-          onClick={() => onPageChange(page - 1)}
+          onClick={() => setCurrentPage(page - 1)}
           disabled={page <= 1}
           aria-label="Previous page"
         >
@@ -62,7 +62,7 @@ export const Pagination = memo(function Pagination({
               "h-8 w-8 text-xs",
               p === "..." && "pointer-events-none border-transparent"
             )}
-            onClick={() => typeof p === "number" && onPageChange(p)}
+            onClick={() => typeof p === "number" && setCurrentPage(p)}
             disabled={p === "..."}
           >
             {p}
@@ -72,7 +72,7 @@ export const Pagination = memo(function Pagination({
           variant="outline"
           size="icon"
           className="h-8 w-8"
-          onClick={() => onPageChange(page + 1)}
+          onClick={() => setCurrentPage(page + 1)}
           disabled={page >= totalPages}
           aria-label="Next page"
         >

@@ -42,16 +42,16 @@ export default function ProductListPage() {
 
   const search = searchParams.get("search") ?? "";
   const category = searchParams.get("category") ?? "";
-  const page = Number(searchParams.get("page")) || 1;
-  const limit = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const { data, isLoading, isFetching, isError, error, refetch } =
     useGetProductsQuery(
       {
         search: search || undefined,
         category: category || undefined,
-        page,
-        limit,
+        page: currentPage,
+        limit: rowsPerPage,
       },
       { skip: false }
     );
@@ -66,7 +66,8 @@ export default function ProductListPage() {
 
   useEffect(() => {
     if (debouncedSearch !== search) {
-      setParams({ search: debouncedSearch }, { resetPageOnKeys: ["search"] });
+      setParams({ search: debouncedSearch });
+      setCurrentPage(1);
     }
   }, [debouncedSearch, search, setParams]);
 
@@ -75,10 +76,7 @@ export default function ProductListPage() {
       { category: value === "all" ? "" : value },
       { resetPageOnKeys: ["category"] }
     );
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setParams({ page: String(newPage) });
+    setCurrentPage(1);
   };
 
   const handleDelete = (id: string) => {
@@ -151,10 +149,8 @@ export default function ProductListPage() {
           isLoading={isFetching}
           search={searchInput}
           onSearchChange={setSearchInput}
-          onPageChange={handlePageChange}
-          onRowsPerPageChange={(limit) =>
-            setParams({ limit: String(limit), page: "1" })
-          }
+          setCurrentPage={setCurrentPage}
+          setRowsPerPage={setRowsPerPage}
           onDelete={handleDelete}
           extraToolbar={
             <div className="flex items-center gap-2">

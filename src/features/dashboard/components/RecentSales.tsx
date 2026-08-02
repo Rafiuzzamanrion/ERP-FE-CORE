@@ -272,11 +272,8 @@ export default memo(function RecentSales({
         totalCount,
         rowsPerPage,
         pageSizeOptions: [5, 10, 20],
-        onPageChange: setCurrentPage,
-        onRowsPerPageChange: (size) => {
-          setRowsPerPage(size);
-          setCurrentPage(1);
-        },
+        setCurrentPage,
+        setRowsPerPage,
       }}
     />
   );

@@ -18,8 +18,8 @@ interface ProductTableProps {
   isLoading?: boolean;
   search: string;
   onSearchChange: (value: string) => void;
-  onPageChange: (page: number) => void;
-  onRowsPerPageChange: (limit: number) => void;
+  setCurrentPage: (page: number) => void;
+  setRowsPerPage: (limit: number) => void;
   onDelete: (id: string) => void;
   extraToolbar?: ReactNode;
 }
@@ -36,8 +36,8 @@ export default memo(function ProductTable({
   isLoading,
   search,
   onSearchChange,
-  onPageChange,
-  onRowsPerPageChange,
+  setCurrentPage,
+  setRowsPerPage,
   onDelete,
   extraToolbar,
 }: ProductTableProps) {
@@ -205,8 +205,8 @@ export default memo(function ProductTable({
         totalCount: meta?.total ?? 0,
         rowsPerPage: meta?.limit ?? 10,
         pageSizeOptions: [10, 20, 50, 100],
-        onPageChange,
-        onRowsPerPageChange,
+        setCurrentPage,
+        setRowsPerPage,
       }}
       bulkActions={[
         {

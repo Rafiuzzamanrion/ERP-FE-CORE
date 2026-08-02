@@ -48,15 +48,17 @@ export default function UsersListPage() {
   const { setParams } = useQueryParams();
 
   const search = searchParams.get("search") ?? "";
-  const page = Number(searchParams.get("page")) || 1;
-  const limit = Number(searchParams.get("limit")) || 10;
 
   const [searchInput, setSearchInput] = useState(search);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   const debouncedSearch = useDebounce(searchInput, 400);
 
   useEffect(() => {
     if (debouncedSearch !== search) {
-      setParams({ search: debouncedSearch }, { resetPageOnKeys: ["search"] });
+      setParams({ search: debouncedSearch });
+      setCurrentPage(1);
     }
   }, [debouncedSearch, search, setParams]);
 
@@ -67,8 +69,6 @@ export default function UsersListPage() {
     isError,
     refetch,
   } = useGetUsersQuery(debouncedSearch);
-
-  const meta = undefined;
 
   const [createUser] = useCreateUserMutation();
   const [updateUser] = useUpdateUserMutation();
@@ -106,7 +106,7 @@ export default function UsersListPage() {
         password: formPassword,
         role: formRole,
       }).unwrap();
-      popup.success("User created");
+      popup.success("User created successfully");
       setIsCreateOpen(false);
       resetForm();
     } catch {
@@ -120,15 +120,14 @@ export default function UsersListPage() {
     if (!editUser) return;
     setIsSubmitting(true);
     try {
-      const data: Record<string, string> = {};
-      if (formName) data.name = formName;
-      if (formEmail) data.email = formEmail;
-      if (formPassword) data.password = formPassword;
-      if (formRole) data.role = formRole;
-      await updateUser({ id: editUser._id, ...data }).unwrap();
-      popup.success("User updated");
+      await updateUser({
+        id: editUser._id,
+        name: editUser.name,
+        email: editUser.email,
+        role: editUser.role ?? undefined,
+      }).unwrap();
+      popup.success("User updated successfully");
       setEditUser(null);
-      resetForm();
     } catch {
       popup.error("Failed to update user");
     } finally {
@@ -141,25 +140,17 @@ export default function UsersListPage() {
     try {
       await deleteUser(deleteId).unwrap();
       popup.success("User deleted");
+      setDeleteId(null);
     } catch {
       popup.error("Failed to delete user");
-    } finally {
-      setDeleteId(null);
     }
   };
 
-  const openEdit = (user: User) => {
-    setEditUser({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    });
-    setFormName(user.name);
-    setFormEmail(user.email);
-    setFormPassword("");
-    setFormRole(typeof user.role === "string" ? user.role : "employee");
-  };
+  const pagedUsers = useMemo(
+    () =>
+      users.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage),
+    [users, currentPage, rowsPerPage]
+  );
 
   const columns: ColumnDef<User>[] = useMemo(
     () => [
@@ -193,74 +184,37 @@ export default function UsersListPage() {
         accessorKey: "name",
         header: "Name",
         cell: ({ row }) => (
-          <div className="font-medium text-foreground">
-            {row.getValue("name")}
-          </div>
+          <span className="font-medium">{row.getValue("name")}</span>
         ),
       },
       {
         accessorKey: "email",
         header: "Email",
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">{row.getValue("email")}</span>
+        ),
       },
       {
         accessorKey: "role",
         header: "Role",
-        cell: ({ row }) => (
-          <Badge variant="secondary" className="capitalize">
-            {row.getValue("role") ?? "-"}
-          </Badge>
-        ),
-      },
-      {
-        accessorKey: "isActive",
-        header: () => <div className="text-center">Status</div>,
         cell: ({ row }) => {
-          const isActive = row.getValue("isActive");
+          const role = row.getValue("role") as string | null;
           return (
-            <div className="flex justify-center">
-              <Badge variant={isActive ? "success" : "destructive"}>
-                {isActive ? "Active" : "Inactive"}
-              </Badge>
-            </div>
+            <Badge variant={role === "admin" ? "default" : "secondary"}>
+              {role ?? "No Role"}
+            </Badge>
           );
         },
       },
       {
-        id: "actions",
-        header: () => <div className="text-right">Actions</div>,
+        accessorKey: "isActive",
+        header: "Status",
         cell: ({ row }) => {
-          const user = row.original;
+          const isActive = row.getValue("isActive") as boolean;
           return (
-            <div className="flex items-center justify-end gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Edit ${user.name}`}
-                onClick={() => openEdit(user)}
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Delete ${user.name}`}
-                onClick={() => setDeleteId(user._id)}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
+            <Badge variant={isActive ? "success" : "destructive"}>
+              {isActive ? "Active" : "Inactive"}
+            </Badge>
           );
         },
       },
@@ -295,7 +249,7 @@ export default function UsersListPage() {
       ) : (
         <DataTable
           columns={columns}
-          data={users}
+          data={pagedUsers}
           isLoading={isLoading || isFetching}
           skeletonRows={5}
           enableSearch
@@ -305,13 +259,12 @@ export default function UsersListPage() {
             setSearchInput(val);
           }}
           pagination={{
-            currentPage: 1,
+            currentPage,
             totalCount: users.length,
-            rowsPerPage: Math.max(users.length, 10),
+            rowsPerPage,
             pageSizeOptions: [10, 20, 50],
-            onPageChange: (newPage) => setParams({ page: String(newPage) }),
-            onRowsPerPageChange: (newLimit) =>
-              setParams({ limit: String(newLimit), page: "1" }),
+            setCurrentPage,
+            setRowsPerPage,
           }}
           bulkActions={[
             {
@@ -328,48 +281,50 @@ export default function UsersListPage() {
               onClick: (rows) => popup.error(`Deleted ${rows.length} users`),
             },
           ]}
-          emptyTitle={
-            searchInput ? "No users match your search" : "No users found"
-          }
-          emptyDescription={
-            searchInput
-              ? "Try a different search term."
-              : "Get started by adding your first user."
-          }
+          rowActions={[
+            {
+              label: "Edit",
+              onClick: (row) => setEditUser(row),
+            },
+            {
+              label: "Delete",
+              variant: "destructive",
+              onClick: (row) => setDeleteId(row._id),
+            },
+          ]}
         />
       )}
 
       {/* Create Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add User</DialogTitle>
-            <DialogDescription>Create a new user account.</DialogDescription>
+            <DialogTitle>Create User</DialogTitle>
+            <DialogDescription>
+              Fill in the details to create a new user account.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Name</Label>
+              <Label>Name</Label>
               <Input
-                id="name"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="John Doe"
+                placeholder="Full name"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label>Email</Label>
               <Input
-                id="email"
                 type="email"
                 value={formEmail}
                 onChange={(e) => setFormEmail(e.target.value)}
-                placeholder="john@company.com"
+                placeholder="email@example.com"
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
+              <Label>Password</Label>
               <Input
-                id="password"
                 type="password"
                 value={formPassword}
                 onChange={(e) => setFormPassword(e.target.value)}
@@ -377,7 +332,7 @@ export default function UsersListPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="role">Role</Label>
+              <Label>Role</Label>
               <Select value={formRole} onValueChange={setFormRole}>
                 <SelectTrigger>
                   <SelectValue />
@@ -394,8 +349,8 @@ export default function UsersListPage() {
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
               Cancel
             </Button>
-            <Button loading={isSubmitting} onClick={handleCreate}>
-              Create
+            <Button onClick={handleCreate} disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -404,82 +359,80 @@ export default function UsersListPage() {
       {/* Edit Dialog */}
       <Dialog
         open={!!editUser}
-        onOpenChange={(open) => {
-          if (!open) setEditUser(null);
-        }}
+        onOpenChange={(open) => !open && setEditUser(null)}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>Update user details.</DialogDescription>
+            <DialogDescription>
+              Update the user account details.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-name">Name</Label>
-              <Input
-                id="edit-name"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-              />
+          {editUser && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label>Name</Label>
+                <Input
+                  value={editUser.name}
+                  onChange={(e) =>
+                    setEditUser({ ...editUser, name: e.target.value })
+                  }
+                  placeholder="Full name"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={editUser.email}
+                  onChange={(e) =>
+                    setEditUser({ ...editUser, email: e.target.value })
+                  }
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Role</Label>
+                <Select
+                  value={editUser.role ?? "employee"}
+                  onValueChange={(val) =>
+                    setEditUser({ ...editUser, role: val })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="employee">Employee</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-email">Email</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={formEmail}
-                onChange={(e) => setFormEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-password">
-                Password (leave blank to keep)
-              </Label>
-              <Input
-                id="edit-password"
-                type="password"
-                value={formPassword}
-                onChange={(e) => setFormPassword(e.target.value)}
-                placeholder="New password"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="edit-role">Role</Label>
-              <Select value={formRole} onValueChange={setFormRole}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="employee">Employee</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditUser(null)}>
               Cancel
             </Button>
-            <Button loading={isSubmitting} onClick={handleUpdate}>
-              Save
+            <Button onClick={handleUpdate} disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirm */}
+      {/* Delete Dialog */}
       <Dialog
         open={!!deleteId}
-        onOpenChange={(open) => {
-          if (!open) setDeleteId(null);
-        }}
+        onOpenChange={(open) => !open && setDeleteId(null)}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
             <DialogDescription>
-              Are you sure? This cannot be undone.
+              Are you sure you want to delete this user? This action cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

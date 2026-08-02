@@ -27,14 +27,14 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function SaleHistoryPage() {
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [searchInput, setSearchInput] = useState("");
 
   const { data, isLoading, isFetching } = useGetSalesQuery({
-    page,
-    limit,
+    page: currentPage,
+    limit: rowsPerPage,
     sort: "-createdAt",
     search: searchInput || undefined,
   });
@@ -156,18 +156,15 @@ export default function SaleHistoryPage() {
         searchValue={searchInput}
         onSearchChange={(val) => {
           setSearchInput(val);
-          setPage(1);
+          setCurrentPage(1);
         }}
         pagination={{
-          currentPage: meta?.page ?? 1,
+          currentPage: meta?.page ?? currentPage,
           totalCount: meta?.total ?? 0,
-          rowsPerPage: meta?.limit ?? 10,
+          rowsPerPage: meta?.limit ?? rowsPerPage,
           pageSizeOptions: [10, 20, 50],
-          onPageChange: setPage,
-          onRowsPerPageChange: (size) => {
-            setLimit(size);
-            setPage(1);
-          },
+          setCurrentPage,
+          setRowsPerPage,
         }}
         bulkActions={[
           {

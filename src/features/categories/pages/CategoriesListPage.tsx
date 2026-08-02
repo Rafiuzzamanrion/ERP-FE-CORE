@@ -40,8 +40,9 @@ export default function CategoriesListPage() {
   );
 
   const search = searchParams.get("search") ?? "";
-  const page = Number(searchParams.get("page")) || 1;
-  const limit = Number(searchParams.get("limit")) || 10;
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const {
     data: result,
@@ -51,8 +52,8 @@ export default function CategoriesListPage() {
     refetch,
   } = useGetCategoriesQuery({
     search: search || undefined,
-    page,
-    limit,
+    page: currentPage,
+    limit: rowsPerPage,
   });
 
   const categories = result?.data ?? [];
@@ -61,14 +62,6 @@ export default function CategoriesListPage() {
   const [createCategory] = useCreateCategoryMutation();
   const [updateCategory] = useUpdateCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
-
-  const handlePageChange = (newPage: number) => {
-    setParams({ page: String(newPage) });
-  };
-
-  const handleRowsPerPageChange = (newLimit: number) => {
-    setParams({ limit: String(newLimit), page: "1" });
-  };
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<Category | null>(null);
@@ -259,15 +252,16 @@ export default function CategoriesListPage() {
           searchValue={searchInput}
           onSearchChange={(val) => {
             setSearchInput(val);
-            setParams({ search: val }, { resetPageOnKeys: ["search"] });
+            setParams({ search: val });
+            setCurrentPage(1);
           }}
           pagination={{
-            currentPage: meta?.page ?? 1,
+            currentPage: meta?.page ?? currentPage,
             totalCount: meta?.total ?? 0,
-            rowsPerPage: meta?.limit ?? 10,
+            rowsPerPage: meta?.limit ?? rowsPerPage,
             pageSizeOptions: [10, 20, 50],
-            onPageChange: handlePageChange,
-            onRowsPerPageChange: handleRowsPerPageChange,
+            setCurrentPage,
+            setRowsPerPage,
           }}
           bulkActions={[
             {

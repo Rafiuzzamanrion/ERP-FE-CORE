@@ -41,6 +41,8 @@ export default function RolesListPage() {
 
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebounce(searchInput, 400);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const filteredRoles =
     roles?.filter(
@@ -50,6 +52,11 @@ export default function RolesListPage() {
           p.key.toLowerCase().includes(debouncedSearch.toLowerCase())
         )
     ) ?? [];
+
+  const pagedRoles = filteredRoles.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -259,20 +266,23 @@ export default function RolesListPage() {
       ) : (
         <DataTable
           columns={columns}
-          data={filteredRoles}
+          data={pagedRoles}
           isLoading={isLoading}
           skeletonRows={4}
           enableSearch
           searchPlaceholder="Search roles or permissions..."
           searchValue={searchInput}
-          onSearchChange={setSearchInput}
+          onSearchChange={(val) => {
+            setSearchInput(val);
+            setCurrentPage(1);
+          }}
           pagination={{
-            currentPage: 1,
+            currentPage,
             totalCount: filteredRoles.length,
-            rowsPerPage: Math.max(filteredRoles.length, 10), // ensures 1 page so pagination is hidden
+            rowsPerPage,
             pageSizeOptions: [10, 20, 50],
-            onPageChange: () => {},
-            onRowsPerPageChange: () => {},
+            setCurrentPage,
+            setRowsPerPage,
           }}
           bulkActions={[
             {
