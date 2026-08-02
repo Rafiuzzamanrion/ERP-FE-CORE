@@ -1,6 +1,14 @@
 "use client";
 
-import { ReactNode, useId, useState, useCallback, useRef } from "react";
+import {
+  ReactNode,
+  useId,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+  useEffect,
+} from "react";
 import {
   ColumnDef,
   flexRender,
@@ -151,9 +159,10 @@ function TableSkeletonRows<TData, TValue>({
     <>
       {Array.from({ length: rows }).map((_, rowIdx) => (
         <TableRow key={rowIdx} className="hover:bg-transparent animate-pulse">
-          {columns.map((column, colIdx) => {
+          {columns.map((column) => {
             const isSelect = column.id === "select";
-            const isActions = column.id === "actions";
+            // BUG FIX: was checking "actions" but injected column id is "_actions"
+            const isActions = column.id === "_actions";
 
             return (
               <TableCell key={column.id}>
@@ -217,19 +226,32 @@ function exportToCSV<TData>(
   const rows = data.map((row: any) =>
     accessors.map((key) => {
       const val = key.split(".").reduce((acc: any, k: string) => acc?.[k], row);
-      return typeof val === "string"
-        ? `"${val.replace(/"/g, '""')}"`
-        : (val ?? "");
+      if (val === null || val === undefined) return "";
+      if (typeof val === "string") return `"${val.replace(/"/g, '""')}"`;
+      if (typeof val === "object")
+        return `"${JSON.stringify(val).replace(/"/g, '""')}"`;
+      return val;
     })
   );
   const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = `${filename}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Helper: format column id as a readable label
+// ---------------------------------------------------------------------------
+function formatColumnLabel(id: string): string {
+  return id
+    .replace(/([A-Z])/g, " $1")
+    .replace(/_/g, " ")
+    .replace(/^\s/, "")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // ---------------------------------------------------------------------------
@@ -262,7 +284,7 @@ export function DataTable<TData, TValue = unknown>({
   onColumnVisibilityChange,
   enableDensityToggle = false,
   defaultDensity = "default",
-  rowHeight = 50,
+  rowHeight,
   emptyTitle = "No results found",
   emptyDescription,
   headerNode,
@@ -300,66 +322,71 @@ export function DataTable<TData, TValue = unknown>({
   const resolvedOnColumnVisibilityChange =
     onColumnVisibilityChange ?? setInternalColumnVisibility;
 
-  // Auto-inject _actions column
-  const columns: ColumnDef<TData, any>[] = [
-    ...(rawColumns as ColumnDef<TData, any>[]),
-    ...(rowActions && rowActions.length > 0
-      ? [
-          {
-            id: "_actions",
-            header: () => null,
-            enableSorting: false,
-            enableHiding: false,
-            cell: ({ row }: { row: any }) => {
-              const rowData = row.original as TData;
-              const visibleActions = rowActions.filter(
-                (a) => !a.hidden?.(rowData)
-              );
-              if (!visibleActions.length) return null;
-              return (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
-                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                    >
-                      <span className="text-base leading-none font-bold">
-                        \u22ee
-                      </span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
-                    {visibleActions.map((action, i) => (
-                      <button
-                        key={i}
-                        className={cn(
-                          "flex w-full items-center gap-2 px-2 py-1.5 text-sm rounded-sm cursor-pointer hover:bg-muted transition-colors",
-                          action.variant === "destructive" &&
-                            "text-destructive hover:text-destructive hover:bg-destructive/10"
-                        )}
-                        onClick={(e: React.MouseEvent) => {
-                          e.stopPropagation();
-                          action.onClick(rowData);
-                        }}
+  // BUG FIX: memoize columns to prevent unnecessary re-renders of all rows
+  const columns: ColumnDef<TData, any>[] = useMemo(
+    () => [
+      ...(rawColumns as ColumnDef<TData, any>[]),
+      ...(rowActions && rowActions.length > 0
+        ? [
+            {
+              id: "_actions",
+              header: () => null,
+              enableSorting: false,
+              enableHiding: false,
+              cell: ({ row }: { row: any }) => {
+                const rowData = row.original as TData;
+                const visibleActions = rowActions.filter(
+                  (a) => !a.hidden?.(rowData)
+                );
+                if (!visibleActions.length) return null;
+                return (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
                       >
-                        {action.icon && (
-                          <span className="h-3.5 w-3.5 flex items-center">
-                            {action.icon}
-                          </span>
-                        )}
-                        {action.label}
-                      </button>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              );
-            },
-          } as ColumnDef<TData, any>,
-        ]
-      : []),
-  ];
+                        <span className="text-base leading-none font-bold">
+                          &#8942;
+                        </span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      {visibleActions.map((action, i) => (
+                        // BUG FIX: use DropdownMenuItem for proper a11y + keyboard nav
+                        <DropdownMenuItem
+                          key={i}
+                          className={cn(
+                            "flex items-center gap-2 cursor-pointer text-sm",
+                            action.variant === "destructive" &&
+                              "text-destructive focus:text-destructive focus:bg-destructive/10"
+                          )}
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            action.onClick(rowData);
+                          }}
+                        >
+                          {action.icon && (
+                            <span className="h-3.5 w-3.5 flex items-center">
+                              {action.icon}
+                            </span>
+                          )}
+                          {action.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              },
+            } as ColumnDef<TData, any>,
+          ]
+        : []),
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rawColumns, rowActions]
+  );
 
   const table = useReactTable({
     data,
@@ -386,7 +413,11 @@ export function DataTable<TData, TValue = unknown>({
   const hasSelection = selectAllPages || selectedRows.length > 0;
   const allPageRowsSelected = table.getIsAllRowsSelected();
 
-  const startRow = Math.min(totalCount, (currentPage - 1) * rowsPerPage + 1);
+  // BUG FIX: startRow shows correct value when totalCount is 0
+  const startRow =
+    totalCount === 0
+      ? 0
+      : Math.min(totalCount, (currentPage - 1) * rowsPerPage + 1);
   const endRow = Math.min(currentPage * rowsPerPage, totalCount);
   const showEmpty = !isLoading && data.length === 0;
   const showToolbar =
@@ -404,12 +435,24 @@ export function DataTable<TData, TValue = unknown>({
     );
   }, []);
 
-  // Reset selectAllPages when selection is cleared
+  // BUG FIX: was calling setSelectAllPages directly in render (anti-pattern).
+  // Use useEffect to reset selectAllPages when selection is cleared.
   const prevCountRef = useRef(selectedRows.length);
-  if (selectAllPages && selectedRows.length === 0 && prevCountRef.current > 0) {
-    setSelectAllPages(false);
-  }
-  prevCountRef.current = selectedRows.length;
+  useEffect(() => {
+    if (
+      selectAllPages &&
+      selectedRows.length === 0 &&
+      prevCountRef.current > 0
+    ) {
+      setSelectAllPages(false);
+    }
+    prevCountRef.current = selectedRows.length;
+  }, [selectAllPages, selectedRows.length]);
+
+  // BUG FIX: density class must apply when rowHeight is NOT set
+  const tableBodyClass = rowHeight
+    ? undefined
+    : densityClass[density] || undefined;
 
   return (
     <Card
@@ -428,7 +471,6 @@ export function DataTable<TData, TValue = unknown>({
           {enableSearch && (
             <div className="flex-1 min-w-0">
               <SearchInput
-                key={tableId}
                 initialValue={searchValue}
                 placeholder={searchPlaceholder}
                 onSearch={(val) => {
@@ -447,7 +489,6 @@ export function DataTable<TData, TValue = unknown>({
 
           <div className="flex items-center gap-1 shrink-0 sm:ml-auto">
             <TooltipProvider delayDuration={300}>
-              {/* Utility icon buttons — subtle ghost style */}
               {onRefetch && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -567,7 +608,8 @@ export function DataTable<TData, TValue = unknown>({
                               </svg>
                             )}
                           </span>
-                          {col.id}
+                          {/* BUG FIX: show formatted label instead of raw col.id */}
+                          {formatColumnLabel(col.id)}
                         </DropdownMenuItem>
                       ))}
                   </DropdownMenuContent>
@@ -679,11 +721,7 @@ export function DataTable<TData, TValue = unknown>({
           "w-full min-w-0 max-h-[calc(100vh-17rem)] min-h-[300px]",
           tableWrapperClassName
         )}
-        className={cn(
-          "w-full",
-          rowHeight ? "[&_td]:py-1 [&_th]:py-1" : densityClass[density],
-          tableClassName
-        )}
+        className={cn("w-full", tableBodyClass, tableClassName)}
       >
         <TableHeader className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">
           {table.getHeaderGroups().map((hg) => (
@@ -711,6 +749,16 @@ export function DataTable<TData, TValue = unknown>({
                       "font-semibold text-xs uppercase tracking-wide text-muted-foreground",
                       (header.column.columnDef.meta as any)?.className
                     )}
+                    // IMPROVEMENT: aria-sort for accessibility
+                    aria-sort={
+                      sorted === "asc"
+                        ? "ascending"
+                        : sorted === "desc"
+                          ? "descending"
+                          : canSort
+                            ? "none"
+                            : undefined
+                    }
                   >
                     {header.isPlaceholder ? null : canSort ? (
                       <button
@@ -838,6 +886,8 @@ export function DataTable<TData, TValue = unknown>({
             <span className="text-xs">
               {isLoading ? (
                 <Skeleton className="h-3.5 w-36 rounded" />
+              ) : totalCount === 0 ? (
+                <span className="text-muted-foreground">No entries</span>
               ) : (
                 <>
                   Showing{" "}
