@@ -250,7 +250,8 @@ export default function UsersListPage() {
         <DataTable
           columns={columns}
           data={pagedUsers}
-          isLoading={isLoading || isFetching}
+          isLoading={isLoading}
+          isFetching={isFetching}
           skeletonRows={5}
           enableSearch
           searchPlaceholder="Search users by name or email..."

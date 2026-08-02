@@ -146,7 +146,8 @@ export default function ProductListPage() {
         <ProductTable
           products={data?.data ?? []}
           meta={data?.meta}
-          isLoading={isFetching}
+          isLoading={isLoading}
+          isFetching={isFetching}
           search={searchInput}
           onSearchChange={setSearchInput}
           setCurrentPage={setCurrentPage}

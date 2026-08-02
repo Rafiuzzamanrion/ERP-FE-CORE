@@ -245,7 +245,8 @@ export default function CategoriesListPage() {
         <DataTable
           columns={columns}
           data={categories}
-          isLoading={isLoading || isFetching}
+          isLoading={isLoading}
+          isFetching={isFetching}
           skeletonRows={5}
           enableSearch
           searchPlaceholder="Search categories..."

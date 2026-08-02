@@ -16,6 +16,7 @@ interface ProductTableProps {
   products: Product[];
   meta?: PaginationMeta;
   isLoading?: boolean;
+  isFetching?: boolean;
   search: string;
   onSearchChange: (value: string) => void;
   setCurrentPage: (page: number) => void;
@@ -34,6 +35,7 @@ export default memo(function ProductTable({
   products,
   meta,
   isLoading,
+  isFetching,
   search,
   onSearchChange,
   setCurrentPage,
@@ -194,6 +196,7 @@ export default memo(function ProductTable({
       columns={columns}
       data={products}
       isLoading={isLoading}
+      isFetching={isFetching}
       skeletonRows={6}
       enableSearch
       searchPlaceholder="Search products by name or SKU…"

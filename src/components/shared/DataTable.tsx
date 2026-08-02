@@ -124,6 +124,7 @@ export interface DataTableProps<TData, TValue = unknown> {
   rowActions?: RowAction<TData>[];
   onRowClick?: (row: TData) => void;
   isLoading?: boolean;
+  isFetching?: boolean;
   skeletonRows?: number;
   extraToolbar?: ReactNode;
   onRefetch?: () => void;
@@ -274,6 +275,7 @@ export function DataTable<TData, TValue = unknown>({
   rowActions,
   onRowClick,
   isLoading = false,
+  isFetching = false,
   skeletonRows = 5,
   extraToolbar,
   onRefetch,
@@ -419,7 +421,8 @@ export function DataTable<TData, TValue = unknown>({
       ? 0
       : Math.min(totalCount, (currentPage - 1) * rowsPerPage + 1);
   const endRow = Math.min(currentPage * rowsPerPage, totalCount);
-  const showEmpty = !isLoading && data.length === 0;
+  const showEmpty = !isLoading && !isFetching && data.length === 0;
+  const showSkeleton = isLoading || isFetching;
   const showToolbar =
     enableSearch ||
     !!bulkActions?.length ||
@@ -718,7 +721,8 @@ export function DataTable<TData, TValue = unknown>({
       {/* Table */}
       <Table
         wrapperClassName={cn(
-          "w-full min-w-0 max-h-[calc(100vh-17rem)] min-h-[300px]",
+          "w-full min-w-0 overflow-auto",
+          "h-[calc(100vh-20rem)]",
           tableWrapperClassName
         )}
         className={cn("w-full", tableBodyClass, tableClassName)}
@@ -793,7 +797,7 @@ export function DataTable<TData, TValue = unknown>({
         </TableHeader>
 
         <TableBody>
-          {isLoading ? (
+          {showSkeleton ? (
             <TableSkeletonRows
               rows={skeletonRows}
               columns={table.getVisibleLeafColumns()}

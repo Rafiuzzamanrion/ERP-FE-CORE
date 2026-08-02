@@ -149,7 +149,8 @@ export default function SaleHistoryPage() {
       <DataTable
         columns={columns}
         data={sales}
-        isLoading={isLoading || isFetching}
+        isLoading={isLoading}
+        isFetching={isFetching}
         skeletonRows={7}
         enableSearch
         searchPlaceholder="Search by product or seller..."
